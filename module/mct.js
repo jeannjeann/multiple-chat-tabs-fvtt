@@ -110,6 +110,24 @@ class MultipleChatTabs {
       ui.chat.scrollBottom();
     }
   }
+
+  /**
+   * Tab scroll
+   * @param {jQuery} html
+   */
+  static updateScrollButtons(html) {
+    const scroller = html.find(".mct-scroller");
+    if (!scroller.length) return;
+
+    const scrollLeft = scroller.scrollLeft();
+    const scrollWidth = scroller[0].scrollWidth;
+    const clientWidth = scroller[0].clientWidth;
+
+    html.find(".scroll-btn.left").toggle(scrollLeft > 0);
+    html
+      .find(".scroll-btn.right")
+      .toggle(scrollWidth - clientWidth - scrollLeft > 1);
+  }
 }
 
 // TabSettings Class
@@ -168,6 +186,13 @@ Hooks.once("init", async function () {
     },
   });
 
+  // Resize hook
+  $(window).on("resize", () => {
+    if (ui.chat && ui.chat.element) {
+      MultipleChatTabs.updateScrollButtons(ui.chat.element);
+    }
+  });
+
   // Override ChatLog.scrollBottom method
   ChatLog.prototype.scrollBottom = function () {
     setTimeout(() => {
@@ -183,13 +208,37 @@ Hooks.once("init", async function () {
     await MultipleChatTabs.addTabs(html);
     MultipleChatTabs.applyFilter(html);
 
-    // Click listener
+    // Tab click listener
     html.off("click", ".multiple-chat-tabs-nav .item");
     html.on(
       "click",
       ".multiple-chat-tabs-nav .item",
       MultipleChatTabs._onTabClick
     );
+
+    // Scroll click listener
+    const scroller = html.find(".mct-scroller");
+    if (!scroller.length) return;
+
+    MultipleChatTabs.updateScrollButtons(html);
+
+    html.off("click", ".scroll-btn");
+    html.on("click", ".scroll-btn", (event) => {
+      const direction = $(event.currentTarget).hasClass("left") ? -1 : 1;
+      const scrollAmount = scroller.width() * 0.7;
+      scroller.scrollLeft(scroller.scrollLeft() + scrollAmount * direction);
+    });
+
+    scroller.off("scroll");
+    scroller.on("scroll", () => MultipleChatTabs.updateScrollButtons(html));
+
+    // Wheel listener
+    scroller.off("wheel");
+    scroller.on("wheel", (event) => {
+      event.preventDefault();
+      const delta = event.originalEvent.deltaX || event.originalEvent.deltaY;
+      scroller.scrollLeft(scroller.scrollLeft() + delta);
+    });
   });
 
   Hooks.on("preCreateChatMessage", (message, data, options, userId) => {

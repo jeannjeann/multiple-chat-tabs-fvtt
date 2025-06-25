@@ -1,11 +1,43 @@
+.mct-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  margin-top: 5px;
+}
+
+.mct-scroller {
+  flex-grow: 1;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  border-top: 1px solid var(--color-border-light-tertiary);
+  padding-top: 5px;
+}
+
+.scroll-btn {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--sidebar-color-text);
+  opacity: 0.7;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.scroll-btn:hover {
+  opacity: 1;
+}
+
 .multiple-chat-tabs-nav {
   flex: none;
   display: flex;
   justify-content: flex-start;
-  margin-top: 5px;
-  border-top: 1px solid var(--color-border-light-tertiary);
   gap: 8px;
   padding: 0 4px;
+  flex-wrap: nowrap;
 }
 
 .multiple-chat-tabs-nav .item {
@@ -15,15 +47,26 @@
   color: var(--sidebar-color-text);
   opacity: 0.7;
   padding: 5px 8px;
-  border-top: 2px solid transparent;
+  position: relative;
   transition: opacity 0.2s ease, border-color 0.2s ease;
+  white-space: nowrap;
 }
 
 .multiple-chat-tabs-nav .item.active {
   opacity: 1;
   font-weight: bold;
-  border-top-color: var(--color-border-highlight);
   text-shadow: 0 0 5px var(--color-shadow-primary);
+}
+
+.multiple-chat-tabs-nav .item.active::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--color-border-highlight);
+  transition: background-color 0.2s ease;
 }
 
 .multiple-chat-tabs-nav .item:not(.active):hover {

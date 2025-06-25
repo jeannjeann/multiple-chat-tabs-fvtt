@@ -1,5 +1,13 @@
-<nav class="multiple-chat-tabs-nav tabs">
-    {{#each tabs}}
-    <a class="item" data-filter="{{this.id}}">{{this.label}}</a>
-    {{/each}}
-</nav>
+{{#if tabs}}
+<div class="mct-container">
+    <button class="scroll-btn left" style="display: none;"><i class="fas fa-chevron-left"></i></button>
+    <div class="mct-scroller">
+        <nav class="multiple-chat-tabs-nav tabs">
+            {{#each tabs}}
+            <a class="item" data-filter="{{this.id}}">{{this.label}}</a>
+            {{/each}}
+        </nav>
+    </div>
+    <button class="scroll-btn right" style="display: none;"><i class="fas fa-chevron-right"></i></button>
+</div>
+{{/if}}
