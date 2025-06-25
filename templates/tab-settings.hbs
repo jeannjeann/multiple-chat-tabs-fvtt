@@ -1,0 +1,13 @@
+<form autocomplete="off">
+    <div class="form-group">
+        <label for="mct-tabs-input">{{localize "MCT.Settings.Tabs.Label"}}</label>
+        <textarea id="mct-tabs-input" name="tabs">{{tabs}}</textarea>
+        <p class="notes">{{localize "MCT.Settings.Tabs.Hint"}}</p>
+    </div>
+
+    <footer class="sheet-footer flexrow">
+        <button type="submit" name="submit">
+            <i class="far fa-save"></i> {{localize "MCT.Settings.Save"}}
+        </button>
+    </footer>
+</form>

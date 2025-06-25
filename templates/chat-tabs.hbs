@@ -1,14 +1,5 @@
 <nav class="multiple-chat-tabs-nav tabs">
-    <a class="item active" data-filter="tab1">
-        {{localize "MCT.Tab1"}}
-    </a>
-    <a class="item" data-filter="tab2">
-        {{localize "MCT.Tab2"}}
-    </a>
-    <a class="item" data-filter="tab3">
-        {{localize "MCT.Tab3"}}
-    </a>
-    <a class="item" data-filter="tab4">
-        {{localize "MCT.Tab4"}}
-    </a>
+    {{#each tabs}}
+    <a class="item" data-filter="{{this.id}}">{{this.label}}</a>
+    {{/each}}
 </nav>

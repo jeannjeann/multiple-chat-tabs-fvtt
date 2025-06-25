@@ -1,6 +1,9 @@
 {
-  "MCT.Tab1": "タブ1",
-  "MCT.Tab2": "タブ2",
-  "MCT.Tab3": "タブ3",
-  "MCT.Tab4": "タブ4"
+  "MCT.Settings.WindowTitle": "チャットタブ設定",
+  "MCT.Settings.Menu.Name": "タブ設定",
+  "MCT.Settings.Menu.Label": "設定ウィンドウを開く",
+  "MCT.Settings.Menu.Hint": "チャットメッセージを振り分けるためのタブを設定します。",
+  "MCT.Settings.Tabs.Label": "タブ名リスト",
+  "MCT.Settings.Tabs.Hint": "表示したいタブの名前をカンマ(,)区切りで入力してください。変更を保存するとチャットログが更新されます。",
+  "MCT.Settings.Save": "変更を保存"
 }

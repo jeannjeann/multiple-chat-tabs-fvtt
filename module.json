@@ -23,6 +23,9 @@
   "templates": [
     {
       "path": "templates/chat-tabs.hbs"
+    },
+    {
+      "path": "templates/tab-settings.hbs"
     }
   ],
   "languages": [
