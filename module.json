@@ -1,0 +1,42 @@
+{
+  "id": "multiple-chat-tabs",
+  "title": "Multiple Chat Tabs",
+  "description": "Splits the Chatlog in multiple tabs.",
+  "authors": [
+    {
+      "name": "Jean.N"
+    }
+  ],
+  "url": "https://github.com/jeannjeann/multiple-chat-tabs-fvtt",
+  "readme": "README.md",
+  "version": "1.0.0",
+  "compatibility": {
+    "minimum": "12",
+    "verified": "12.343"
+  },
+  "esmodules": [
+    "module/mct.js"
+  ],
+  "styles": [
+    "css/mct.css"
+  ],
+  "templates": [
+    {
+      "path": "templates/chat-tabs.hbs"
+    }
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    },
+    {
+      "lang": "ja",
+      "name": "日本語(Japanese)",
+      "path": "lang/ja.json"
+    }
+  ],
+    "manifest": "https://github.com/jeannjeann/multiple-chat-tabs-fvtt/releases/download/1.0.0/module.json",
+    "download": "https://github.com/jeannjeann/multiple-chat-tabs-fvtt/releases/download/1.0.0/module.zip"
+}
