@@ -3,9 +3,9 @@ import { TabSettings } from "./tabSettings.js";
 
 export function registerSettings() {
   game.settings.registerMenu("multiple-chat-tabs", "tab-settings", {
-    name: "MCT.Settings.Menu.Name",
-    label: "MCT.Settings.Menu.Label",
-    hint: "MCT.Settings.Menu.Hint",
+    name: "MCT.menu.name",
+    label: "MCT.menu.label",
+    hint: "MCT.menu.hint",
     icon: "fas fa-tasks",
     type: TabSettings,
     restricted: true,
@@ -16,10 +16,18 @@ export function registerSettings() {
     config: false,
     type: String,
     default: JSON.stringify([
-      { id: `tab-${foundry.utils.randomID(16)}`, label: "Tab1" },
-      { id: `tab-${foundry.utils.randomID(16)}`, label: "Tab2" },
-      { id: `tab-${foundry.utils.randomID(16)}`, label: "Tab3" },
-      { id: `tab-${foundry.utils.randomID(16)}`, label: "Tab4" },
+      {
+        id: `tab-${foundry.utils.randomID(16)}`,
+        label: game.i18n.localize("MCT.settings.defaults.main"),
+      },
+      {
+        id: `tab-${foundry.utils.randomID(16)}`,
+        label: game.i18n.localize("MCT.settings.defaults.roll"),
+      },
+      {
+        id: `tab-${foundry.utils.randomID(16)}`,
+        label: game.i18n.localize("MCT.settings.defaults.sub"),
+      },
     ]),
     onChange: () => {
       setTimeout(() => {

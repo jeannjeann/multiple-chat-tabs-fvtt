@@ -1,22 +1,27 @@
 <form autocomplete="off">
-    <p class="notes">{{localize "MCT.Settings.Tabs.Hint"}}</p>
+    <p class="notes">{{localize "MCT.settings.hint"}}</p>
     
     <ol class="tab-list">
         {{#each tabs}}
-        <li class="form-group tab-item" data-tab-id="{{this.id}}">
+        <li class="tab-item" data-tab-id="{{this.id}}">
             <div class="mct-tab-row">
                 <i class="fas fa-bars drag-handle"></i>
                 <span class="tab-label">{{this.label}}</span>
-                <a class="edit-tab" title="{{localize 'MCT.EditTab.Title'}}"><i class="fas fa-cog"></i></a>
-                <a class="delete-tab" title="{{localize 'MCT.DeleteTab.Title'}}"><i class="fas fa-trash"></i></a>
+                <a class="edit-tab" title="{{localize 'MMCT.settings.tooltips.edit'}}"><i class="fas fa-cog"></i></a>
+                <a class="delete-tab" title="{{localize 'MCT.settings.tooltips.delete'}}"><i class="fas fa-trash"></i></a>
             </div>
         </li>
         {{/each}}
     </ol>
 
-    <div class="form-group">
+    <div class="form-group-stacked">
         <button type="button" class="add-tab">
-            <i class="fas fa-plus"></i> {{localize "MCT.Settings.AddTab"}}
+            <i class="fas fa-plus"></i> {{localize "MCT.settings.buttons.add"}}
+        </button>
+    </div>
+    <div class="form-group"> 
+        <button type="button" class="reset-settings" title="{{localize 'MCT.Settings.Reset.Hint'}}">
+            <i class="fas fa-undo"></i> {{localize "MCT.settings.buttons.reset"}}
         </button>
     </div>
 </form>

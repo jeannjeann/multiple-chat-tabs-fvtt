@@ -9,7 +9,6 @@ export class MultipleChatTabs {
         return tabs.filter((tab) => tab.label);
       }
     } catch (e) {
-      console.error("MCT error", e);
       return [];
     }
     return [];
@@ -140,9 +139,8 @@ export class MultipleChatTabs {
 
     const tabs = this.getTabs();
     const defaultName =
-      game.i18n.localize("MCT.Settings.NewTabDefaultName") || "New Tab";
+      game.i18n.localize("MCT.settings.defaults.newTabName") || "New Tab";
 
-    // Find a unique name for the new tab
     let newLabel = defaultName;
     let counter = 2;
     const existingLabels = new Set(tabs.map((t) => t.label));
@@ -157,11 +155,7 @@ export class MultipleChatTabs {
     };
 
     tabs.push(newTab);
-
-    // Set the new tab to be active immediately upon creation.
     this.activeFilter = newTab.id;
-
-    // Save the updated tabs list, which will trigger the onChange hook to refresh the UI.
     await game.settings.set("multiple-chat-tabs", "tabs", JSON.stringify(tabs));
   }
 

@@ -4,7 +4,7 @@ import { MultipleChatTabs } from "./multipleChatTabs.js";
 export class TabSettings extends FormApplication {
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions, {
-      title: game.i18n.localize("MCT.Settings.WindowTitle"),
+      title: game.i18n.localize("MCT.settings.windowTitle"),
       id: "multiple-chat-tabs-settings",
       template: "modules/multiple-chat-tabs/templates/tab-settings.hbs",
       width: 280,
@@ -27,12 +27,39 @@ export class TabSettings extends FormApplication {
   activateListeners(html) {
     super.activateListeners(html);
     html.find(".add-tab").on("click", this._onAddTab.bind(this));
+    html.find(".reset-settings").on("click", this._onResetSettings.bind(this));
     html.find(".delete-tab").on("click", this._onDeleteTab.bind(this));
     html.find(".edit-tab").on("click", this._onEditTab.bind(this));
   }
 
+  async _onDragStart(event) {
+    const item = event.currentTarget.closest(".tab-item");
+    if (!item) return;
+    const dragData = {
+      id: item.dataset.tabId,
+      type: "MCTTab",
+    };
+    event.dataTransfer.setData("text/plain", JSON.stringify(dragData));
+  }
+
   async _onDrop(event) {
-    super._onDrop(event);
+    let data;
+    try {
+      data = JSON.parse(event.dataTransfer.getData("text/plain"));
+      if (data.type !== "MCTTab") return;
+    } catch (err) {
+      return;
+    }
+
+    const draggedElement = this.element.find(
+      `.tab-item[data-tab-id="${data.id}"]`
+    );
+    if (!draggedElement.length) return;
+
+    const dropTarget = event.currentTarget;
+    if (!dropTarget || dropTarget === draggedElement[0]) return;
+
+    dropTarget.before(draggedElement[0]);
 
     const newTabs = [];
     this.element.find(".tab-list .tab-item").each((index, el) => {
@@ -51,7 +78,8 @@ export class TabSettings extends FormApplication {
     await game.settings.set(
       "multiple-chat-tabs",
       "tabs",
-      JSON.stringify(newTabs)
+      JSON.stringify(newTabs),
+      { noRefresh: true }
     );
   }
 
@@ -59,7 +87,7 @@ export class TabSettings extends FormApplication {
     event.preventDefault();
     const tabs = MultipleChatTabs.getTabs();
     const newTabName =
-      game.i18n.localize("MCT.Settings.NewTabDefaultName") || "New Tab";
+      game.i18n.localize("MCT.settings.defaults.newTabName") || "New Tab";
 
     const newTab = {
       id: `tab-${foundry.utils.randomID(16)}`,
@@ -72,24 +100,78 @@ export class TabSettings extends FormApplication {
     this.render(true);
   }
 
-  async _onDeleteTab(event) {
+  async _onResetSettings(event) {
     event.preventDefault();
-    const tabId = $(event.currentTarget).closest(".tab-item").data("tabId");
-    if (!tabId) return;
-
-    let tabs = MultipleChatTabs.getTabs();
-    tabs = tabs.filter((t) => t.id !== tabId);
-
-    await game.settings.set("multiple-chat-tabs", "tabs", JSON.stringify(tabs));
-    this.render(true);
+    const dialog = new Dialog({
+      title: game.i18n.localize("MCT.dialog.reset.title"),
+      content: `<p>${game.i18n.localize("MCT.dialog.reset.content")}</p>`,
+      buttons: {
+        yes: {
+          icon: '<i class="fas fa-check"></i>',
+          label: game.i18n.localize("MCT.yes"),
+          callback: async () => {
+            const defaultSettings = game.settings.settings.get(
+              "multiple-chat-tabs.tabs"
+            ).default;
+            await game.settings.set(
+              "multiple-chat-tabs",
+              "tabs",
+              defaultSettings
+            );
+            this.render(true);
+          },
+        },
+        no: {
+          icon: '<i class="fas fa-times"></i>',
+          label: game.i18n.localize("MCT.no"),
+        },
+      },
+      default: "no",
+    });
+    dialog.render(true);
   }
 
-  _onEditTab(event) {
+  async _onEditTab(event) {
     event.preventDefault();
     const tabId = $(event.currentTarget).closest(".tab-item").data("tabId");
     if (tabId) {
       new TabDetailSettings(tabId).render(true);
     }
+  }
+
+  async _onDeleteTab(event) {
+    event.preventDefault();
+    const tabItem = $(event.currentTarget).closest(".tab-item");
+    const tabId = tabItem.data("tabId");
+    const tabName = tabItem.find(".tab-label").text();
+    if (!tabId) return;
+
+    const dialog = new Dialog({
+      title: game.i18n.localize("MCT.dialog.delete.title"),
+      content: game.i18n.format("MCT.dialog.delete.content", { name: tabName }),
+      buttons: {
+        yes: {
+          icon: '<i class="fas fa-trash"></i>',
+          label: game.i18n.localize("MCT.yes"),
+          callback: async () => {
+            let tabs = MultipleChatTabs.getTabs();
+            tabs = tabs.filter((t) => t.id !== tabId);
+            await game.settings.set(
+              "multiple-chat-tabs",
+              "tabs",
+              JSON.stringify(tabs)
+            );
+            this.render(true);
+          },
+        },
+        no: {
+          icon: '<i class="fas fa-times"></i>',
+          label: game.i18n.localize("MCT.no"),
+        },
+      },
+      default: "no",
+    });
+    dialog.render(true);
   }
 
   async _updateObject(event, formData) {
@@ -106,7 +188,7 @@ export class TabDetailSettings extends FormApplication {
 
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions, {
-      title: game.i18n.localize("MCT.DetailSettings.WindowTitle"),
+      title: game.i18n.localize("MCT.detailSettings.windowTitle"),
       id: "multiple-chat-tabs-detail-settings",
       template: "modules/multiple-chat-tabs/templates/tab-detail-settings.hbs",
       width: 400,
