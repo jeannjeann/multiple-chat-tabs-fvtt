@@ -1,5 +1,7 @@
 {
   "MCT.Settings.WindowTitle": "チャットタブ設定",
+  "MCT.DetailSettings.WindowTitle": "タブ詳細設定",
+  "MCT.DetailSettings.Label": "タブ名",
   "MCT.Settings.Menu.Name": "タブ設定",
   "MCT.Settings.Menu.Label": "設定ウィンドウを開く",
   "MCT.Settings.Menu.Hint": "チャットメッセージを振り分けるためのタブを設定します。",
@@ -8,5 +10,7 @@
   "MCT.Settings.AddTab": "タブを追加",
   "MCT.Settings.TabNamePlaceholder": "タブ名",
   "MCT.Settings.NewTabDefaultName": "新規タブ",
-  "MCT.AddTab.Title": "新しいタブを追加"
+  "MCT.AddTab.Title": "新しいタブを追加",
+  "MCT.EditTab.Title": "詳細設定を編集",
+  "MCT.DeleteTab.Title": "このタブを削除"
 }

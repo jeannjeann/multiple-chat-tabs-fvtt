@@ -1,5 +1,7 @@
 {
   "MCT.Settings.WindowTitle": "Chat Tab Settings",
+  "MCT.DetailSettings.WindowTitle": "Tab Detail Settings",
+  "MCT.DetailSettings.Label": "Tab Name",
   "MCT.Settings.Menu.Name": "Tab Configuration",
   "MCT.Settings.Menu.Label": "Open Settings",
   "MCT.Settings.Menu.Hint": "Configure the tabs used to filter chat messages.",
@@ -8,5 +10,7 @@
   "MCT.Settings.AddTab": "Add Tab",
   "MCT.Settings.TabNamePlaceholder": "Tab Name",
   "MCT.Settings.NewTabDefaultName": "New Tab",
-  "MCT.AddTab.Title": "Add New Tab"
+  "MCT.AddTab.Title": "Add New Tab",
+  "MCT.EditTab.Title": "Edit Details",
+  "MCT.DeleteTab.Title": "Delete this tab"
 }

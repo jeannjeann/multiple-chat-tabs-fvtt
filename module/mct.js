@@ -1,5 +1,4 @@
 import { MultipleChatTabs } from "./multipleChatTabs.js";
-import { TabSettings } from "./tabSettings.js";
 import { registerSettings } from "./settings.js";
 
 /**

@@ -4,9 +4,12 @@
     <ol class="tab-list">
         {{#each tabs}}
         <li class="form-group tab-item" data-tab-id="{{this.id}}">
-            <i class="fas fa-bars drag-handle"></i>
-            <input type="text" name="label" value="{{this.label}}" placeholder="{{localize 'MCT.Settings.TabNamePlaceholder'}}"/>
-            <a class="delete-tab"><i class="fas fa-trash"></i></a>
+            <div class="mct-tab-row">
+                <i class="fas fa-bars drag-handle"></i>
+                <span class="tab-label">{{this.label}}</span>
+                <a class="edit-tab" title="{{localize 'MCT.EditTab.Title'}}"><i class="fas fa-cog"></i></a>
+                <a class="delete-tab" title="{{localize 'MCT.DeleteTab.Title'}}"><i class="fas fa-trash"></i></a>
+            </div>
         </li>
         {{/each}}
     </ol>
@@ -16,10 +19,4 @@
             <i class="fas fa-plus"></i> {{localize "MCT.Settings.AddTab"}}
         </button>
     </div>
-
-    <footer class="sheet-footer flexrow">
-        <button type="submit" name="submit">
-            <i class="far fa-save"></i> {{localize "MCT.Settings.Save"}}
-        </button>
-    </footer>
 </form>
