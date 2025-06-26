@@ -6,5 +6,7 @@
   "MCT.Settings.Tabs.Hint": "You can add, delete, and reorder tabs. Drag the handle to reorder, and click the trash icon to delete.",
   "MCT.Settings.Save": "Save Changes",
   "MCT.Settings.AddTab": "Add Tab",
-  "MCT.Settings.TabNamePlaceholder": "Tab Name"
+  "MCT.Settings.TabNamePlaceholder": "Tab Name",
+  "MCT.Settings.NewTabDefaultName": "New Tab",
+  "MCT.AddTab.Title": "Add New Tab"
 }

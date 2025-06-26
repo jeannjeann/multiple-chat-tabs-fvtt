@@ -85,6 +85,11 @@ class MultipleChatTabs {
       const delta = event.originalEvent.deltaX || event.originalEvent.deltaY;
       scroller.scrollLeft(scroller.scrollLeft() + delta);
     });
+
+    // Add tab button listeners
+    html
+      .off("click", ".add-tab-btn")
+      .on("click", ".add-tab-btn", this._onAddTabClick.bind(this));
   }
 
   /**
@@ -105,6 +110,59 @@ class MultipleChatTabs {
 
     const appElement = $(event.currentTarget).closest(".app");
     MultipleChatTabs.applyFilter(appElement);
+  }
+
+  /**
+   * Tab scroll
+   * @param {jQuery} html
+   */
+  static updateScrollButtons(html) {
+    const scroller = html.find(".mct-scroller");
+    if (!scroller.length) return;
+
+    const scrollLeft = scroller.scrollLeft();
+    const scrollWidth = scroller[0].scrollWidth;
+    const clientWidth = scroller[0].clientWidth;
+
+    html.find(".scroll-btn.left").toggle(scrollLeft > 0);
+    html
+      .find(".scroll-btn.right")
+      .toggle(scrollWidth - clientWidth - scrollLeft > 1);
+  }
+
+  /**
+   * Add Tab button event handler
+   * @param {Event} event
+   * @private
+   */
+  static async _onAddTabClick(event) {
+    event.preventDefault();
+
+    const tabs = this.getTabs();
+    const defaultName =
+      game.i18n.localize("MCT.Settings.NewTabDefaultName") || "New Tab";
+
+    // Find a unique name for the new tab
+    let newLabel = defaultName;
+    let counter = 2;
+    const existingLabels = new Set(tabs.map((t) => t.label));
+    while (existingLabels.has(newLabel)) {
+      newLabel = `${defaultName} ${counter}`;
+      counter++;
+    }
+
+    const newTab = {
+      id: `tab-${foundry.utils.randomID(16)}`,
+      label: newLabel,
+    };
+
+    tabs.push(newTab);
+
+    // Set the new tab to be active immediately upon creation.
+    this.activeFilter = newTab.id;
+
+    // Save the updated tabs list, which will trigger the onChange hook to refresh the UI.
+    await game.settings.set("multiple-chat-tabs", "tabs", JSON.stringify(tabs));
   }
 
   /**
@@ -154,24 +212,6 @@ class MultipleChatTabs {
       ui.chat.scrollBottom();
     }
   }
-
-  /**
-   * Tab scroll
-   * @param {jQuery} html
-   */
-  static updateScrollButtons(html) {
-    const scroller = html.find(".mct-scroller");
-    if (!scroller.length) return;
-
-    const scrollLeft = scroller.scrollLeft();
-    const scrollWidth = scroller[0].scrollWidth;
-    const clientWidth = scroller[0].clientWidth;
-
-    html.find(".scroll-btn.left").toggle(scrollLeft > 0);
-    html
-      .find(".scroll-btn.right")
-      .toggle(scrollWidth - clientWidth - scrollLeft > 1);
-  }
 }
 
 // TabSettings Class
@@ -215,20 +255,22 @@ class TabSettings extends FormApplication {
   async _onAddTab(event) {
     event.preventDefault();
     const newTabId = `tab-${foundry.utils.randomID(16)}`;
+    const newTabName =
+      game.i18n.localize("MCT.Settings.NewTabDefaultName") || "New Tab";
     const newTabHtml = `
       <li class="form-group tab-item" data-tab-id="${newTabId}">
         <i class="fas fa-bars drag-handle"></i>
-        <input type="text" name="label" value="New Tab" placeholder="${game.i18n.localize(
-          "MCT.Settings.TabNamePlaceholder"
-        )}"/>
+        <input type="text" name="label" value="${newTabName}" placeholder="${game.i18n.localize(
+      "MCT.Settings.TabNamePlaceholder"
+    )}"/>
         <a class="delete-tab"><i class="fas fa-trash"></i></a>
       </li>
     `;
     this.element.find(".tab-list").append(newTabHtml);
-    this.setPosition(); // Recalculate form height
+    this.setPosition();
   }
 
-  _onDeleteTab(event) {
+  async _onDeleteTab(event) {
     event.preventDefault();
     $(event.currentTarget).closest(".tab-item").remove();
     this.setPosition(); // Recalculate form height

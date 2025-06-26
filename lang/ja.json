@@ -6,5 +6,7 @@
   "MCT.Settings.Tabs.Hint": "タブの追加・削除・並べ替えができます。ドラッグハンドルで順番を入れ替え、ゴミ箱アイコンで削除します。",
   "MCT.Settings.Save": "変更を保存",
   "MCT.Settings.AddTab": "タブを追加",
-  "MCT.Settings.TabNamePlaceholder": "タブ名"
+  "MCT.Settings.TabNamePlaceholder": "タブ名",
+  "MCT.Settings.NewTabDefaultName": "新規タブ",
+  "MCT.AddTab.Title": "新しいタブを追加"
 }
