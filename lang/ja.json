@@ -3,7 +3,8 @@
   "MCT.Settings.Menu.Name": "タブ設定",
   "MCT.Settings.Menu.Label": "設定ウィンドウを開く",
   "MCT.Settings.Menu.Hint": "チャットメッセージを振り分けるためのタブを設定します。",
-  "MCT.Settings.Tabs.Label": "タブ名リスト",
-  "MCT.Settings.Tabs.Hint": "表示したいタブの名前をカンマ(,)区切りで入力してください。変更を保存するとチャットログが更新されます。",
-  "MCT.Settings.Save": "変更を保存"
+  "MCT.Settings.Tabs.Hint": "タブの追加・削除・並べ替えができます。ドラッグハンドルで順番を入れ替え、ゴミ箱アイコンで削除します。",
+  "MCT.Settings.Save": "変更を保存",
+  "MCT.Settings.AddTab": "タブを追加",
+  "MCT.Settings.TabNamePlaceholder": "タブ名"
 }

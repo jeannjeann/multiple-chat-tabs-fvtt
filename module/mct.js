@@ -2,18 +2,21 @@
 class MultipleChatTabs {
   // Helper to get configured tabs
   static getTabs() {
-    const tabString = game.settings.get("multiple-chat-tabs", "tabs") || "Tab1";
-    return tabString
-      .split(",")
-      .map((label, index) => ({
-        id: `tab-${index}`,
-        label: label.trim(),
-      }))
-      .filter((tab) => tab.label);
+    const tabString = game.settings.get("multiple-chat-tabs", "tabs");
+    try {
+      const tabs = JSON.parse(tabString);
+      if (Array.isArray(tabs)) {
+        return tabs.filter((tab) => tab.label);
+      }
+    } catch (e) {
+      console.error("Multiple Chat Tabs error", e);
+      return [];
+    }
+    return [];
   }
 
   // Set default tab
-  static activeFilter = "tab-0";
+  static activeFilter = null;
 
   /**
    * Add tabs UI
@@ -24,7 +27,7 @@ class MultipleChatTabs {
     if (tabs.length === 0) return;
 
     if (!tabs.some((t) => t.id === this.activeFilter)) {
-      this.activeFilter = tabs[0]?.id || "tab-0";
+      this.activeFilter = tabs[0]?.id || null;
     }
 
     const existingTabs = html.find(".multiple-chat-tabs-nav");
@@ -80,7 +83,13 @@ class MultipleChatTabs {
 
     // Get tabID
     const tabs = this.getTabs();
+    if (tabs.length === 0) {
+      chatLog.find(".message").show();
+      if (ui.chat) ui.chat.scrollBottom();
+      return;
+    }
     const validTabIds = new Set(tabs.map((t) => t.id));
+    const firstTabId = tabs[0]?.id;
 
     const messages = chatLog.find(".message");
 
@@ -100,7 +109,8 @@ class MultipleChatTabs {
       if (sourceTab && validTabIds.has(sourceTab)) {
         show = sourceTab === this.activeFilter;
       } else {
-        show = this.activeFilter === "tab-0";
+        // No filter messages to show default tab
+        show = this.activeFilter === firstTabId;
       }
 
       messageElement.toggle(show);
@@ -137,20 +147,77 @@ class TabSettings extends FormApplication {
       title: game.i18n.localize("MCT.Settings.WindowTitle"),
       id: "multiple-chat-tabs-settings",
       template: "modules/multiple-chat-tabs/templates/tab-settings.hbs",
-      width: 400,
+      width: 450,
       height: "auto",
       resizable: true,
+      classes: ["mct-settings-sheet"],
+      dragDrop: [{ dragSelector: ".drag-handle", dropSelector: ".tab-item" }],
     });
   }
 
   getData(options) {
     const data = super.getData(options);
-    data.tabs = game.settings.get("multiple-chat-tabs", "tabs");
+    data.tabs = MultipleChatTabs.getTabs();
     return data;
   }
 
+  activateListeners(html) {
+    super.activateListeners(html);
+    html.find(".add-tab").on("click", this._onAddTab.bind(this));
+    html.find(".delete-tab").on("click", this._onDeleteTab.bind(this));
+  }
+
+  _onDrop(event) {
+    const dragData = TextEditor.getDragEventData(event);
+    const targetElement = $(event.target).closest(".tab-item");
+    if (!targetElement.length) return;
+
+    const draggedElement = this.element.find(`[data-tab-id="${dragData.id}"]`);
+    if (draggedElement.length === 0) return;
+
+    targetElement.before(draggedElement);
+  }
+
+  async _onAddTab(event) {
+    event.preventDefault();
+    const newTabId = `tab-${foundry.utils.randomID(16)}`;
+    const newTabHtml = `
+      <li class="form-group tab-item" data-tab-id="${newTabId}">
+        <i class="fas fa-bars drag-handle"></i>
+        <input type="text" name="label" value="New Tab" placeholder="${game.i18n.localize(
+          "MCT.Settings.TabNamePlaceholder"
+        )}"/>
+        <a class="delete-tab"><i class="fas fa-trash"></i></a>
+      </li>
+    `;
+    this.element.find(".tab-list").append(newTabHtml);
+    this.setPosition(); // Recalculate form height
+  }
+
+  _onDeleteTab(event) {
+    event.preventDefault();
+    $(event.currentTarget).closest(".tab-item").remove();
+    this.setPosition(); // Recalculate form height
+  }
+
   async _updateObject(event, formData) {
-    await game.settings.set("multiple-chat-tabs", "tabs", formData.tabs);
+    const newTabs = [];
+    this.element.find(".tab-list .tab-item").each((index, el) => {
+      const element = $(el);
+      const label = element.find('input[name="label"]').val();
+      if (label) {
+        newTabs.push({
+          id: element.data("tabId"),
+          label: label,
+        });
+      }
+    });
+
+    await game.settings.set(
+      "multiple-chat-tabs",
+      "tabs",
+      JSON.stringify(newTabs)
+    );
   }
 }
 
@@ -178,7 +245,12 @@ Hooks.once("init", async function () {
     scope: "world",
     config: false,
     type: String,
-    default: "Tab1,Tab2,Tab3,Tab4",
+    default: JSON.stringify([
+      { id: `tab-${foundry.utils.randomID(16)}`, label: "Tab1" },
+      { id: `tab-${foundry.utils.randomID(16)}`, label: "Tab2" },
+      { id: `tab-${foundry.utils.randomID(16)}`, label: "Tab3" },
+      { id: `tab-${foundry.utils.randomID(16)}`, label: "Tab4" },
+    ]),
     onChange: () => {
       if (ui.chat) {
         ui.chat.render();

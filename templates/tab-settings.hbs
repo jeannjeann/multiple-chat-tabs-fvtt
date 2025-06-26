@@ -1,8 +1,20 @@
 <form autocomplete="off">
+    <p class="notes">{{localize "MCT.Settings.Tabs.Hint"}}</p>
+    
+    <ol class="tab-list">
+        {{#each tabs}}
+        <li class="form-group tab-item" data-tab-id="{{this.id}}">
+            <i class="fas fa-bars drag-handle"></i>
+            <input type="text" name="label" value="{{this.label}}" placeholder="{{localize 'MCT.Settings.TabNamePlaceholder'}}"/>
+            <a class="delete-tab"><i class="fas fa-trash"></i></a>
+        </li>
+        {{/each}}
+    </ol>
+
     <div class="form-group">
-        <label for="mct-tabs-input">{{localize "MCT.Settings.Tabs.Label"}}</label>
-        <textarea id="mct-tabs-input" name="tabs">{{tabs}}</textarea>
-        <p class="notes">{{localize "MCT.Settings.Tabs.Hint"}}</p>
+        <button type="button" class="add-tab">
+            <i class="fas fa-plus"></i> {{localize "MCT.Settings.AddTab"}}
+        </button>
     </div>
 
     <footer class="sheet-footer flexrow">

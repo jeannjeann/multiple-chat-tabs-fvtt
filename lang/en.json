@@ -3,7 +3,8 @@
   "MCT.Settings.Menu.Name": "Tab Configuration",
   "MCT.Settings.Menu.Label": "Open Settings",
   "MCT.Settings.Menu.Hint": "Configure the tabs used to filter chat messages.",
-  "MCT.Settings.Tabs.Label": "Tab Name List",
-  "MCT.Settings.Tabs.Hint": "Enter the names of the tabs you want to display, separated by commas (,). Saving changes will refresh the chat log.",
-  "MCT.Settings.Save": "Save Changes"
+  "MCT.Settings.Tabs.Hint": "You can add, delete, and reorder tabs. Drag the handle to reorder, and click the trash icon to delete.",
+  "MCT.Settings.Save": "Save Changes",
+  "MCT.Settings.AddTab": "Add Tab",
+  "MCT.Settings.TabNamePlaceholder": "Tab Name"
 }
