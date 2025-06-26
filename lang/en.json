@@ -22,7 +22,8 @@
       "tooltips": {
         "edit": "Edit Details",
         "delete": "Delete this tab",
-        "reset": "Reset all tab settings to their default state."
+        "reset": "Reset all tab settings to their default state.",
+        "defaultTab": "This is the default tab and cannot be deleted or reordered."
       }
     },
     "detailSettings": {
@@ -43,6 +44,10 @@
         "title": "Delete Tab",
         "content": "Are you sure you want to delete the tab '<strong>{name}</strong>'?"
       }
+    },
+    "notifications": {
+      "cannotDeleteDefault": "The default tab cannot be deleted.",
+      "cannotDragDefault": "The default tab cannot be reordered."
     },
     "yes": "Yes",
     "no": "No"

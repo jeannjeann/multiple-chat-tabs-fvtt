@@ -35,8 +35,21 @@ export class TabSettings extends FormApplication {
   async _onDragStart(event) {
     const item = event.currentTarget.closest(".tab-item");
     if (!item) return;
+
+    const tabId = item.dataset.tabId;
+    const tabData = MultipleChatTabs.getTabs().find((t) => t.id === tabId);
+
+    // Default tab
+    if (tabData?.isDefault) {
+      event.preventDefault();
+      ui.notifications.warn(
+        game.i18n.localize("MCT.notifications.cannotDragDefault")
+      );
+      return;
+    }
+
     const dragData = {
-      id: item.dataset.tabId,
+      id: tabId,
       type: "MCTTab",
     };
     event.dataTransfer.setData("text/plain", JSON.stringify(dragData));
@@ -145,6 +158,15 @@ export class TabSettings extends FormApplication {
     const tabId = tabItem.data("tabId");
     const tabName = tabItem.find(".tab-label").text();
     if (!tabId) return;
+
+    // Default tab
+    const tabData = MultipleChatTabs.getTabs().find((t) => t.id === tabId);
+    if (tabData?.isDefault) {
+      ui.notifications.warn(
+        game.i18n.localize("MCT.notifications.cannotDeleteDefault")
+      );
+      return;
+    }
 
     const dialog = new Dialog({
       title: game.i18n.localize("MCT.dialog.delete.title"),

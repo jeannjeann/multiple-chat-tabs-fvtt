@@ -5,10 +5,18 @@
         {{#each tabs}}
         <li class="tab-item" data-tab-id="{{this.id}}">
             <div class="mct-tab-row">
+                {{#if this.isDefault}}
+                <i class="fas fa-thumbtack default-tab-icon" title="{{localize 'MCT.settings.tooltips.defaultTab'}}"></i>
+                {{else}}
                 <i class="fas fa-bars drag-handle"></i>
+                {{/if}}
                 <span class="tab-label">{{this.label}}</span>
-                <a class="edit-tab" title="{{localize 'MMCT.settings.tooltips.edit'}}"><i class="fas fa-cog"></i></a>
+                <a class="edit-tab" title="{{localize 'MCT.settings.tooltips.edit'}}"><i class="fas fa-cog"></i></a>
+                {{#unless this.isDefault}}
                 <a class="delete-tab" title="{{localize 'MCT.settings.tooltips.delete'}}"><i class="fas fa-trash"></i></a>
+                {{else}}
+                <div class="button-spacer"></div>
+                {{/unless}}
             </div>
         </li>
         {{/each}}

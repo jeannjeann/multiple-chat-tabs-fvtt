@@ -22,7 +22,8 @@
       "tooltips": {
         "edit": "詳細設定を編集",
         "delete": "このタブを削除",
-        "reset": "すべてのタブ設定を初期状態に戻します。"
+        "reset": "すべてのタブ設定を初期状態に戻します。",
+        "defaultTab": "このタブはデフォルトのため、削除や並べ替えはできません。"
       }
     },
     "detailSettings": {
@@ -43,6 +44,10 @@
         "title": "タブの削除",
         "content": "タブ「<strong>{name}</strong>」を本当に削除しますか？"
       }
+    },
+    "notifications": {
+      "cannotDeleteDefault": "デフォルトのタブは削除できません。",
+      "cannotDragDefault": "デフォルトのタブは並べ替えできません。"
     },
     "yes": "はい",
     "no": "いいえ"

@@ -19,6 +19,7 @@ export function registerSettings() {
       {
         id: `tab-${foundry.utils.randomID(16)}`,
         label: game.i18n.localize("MCT.settings.defaults.main"),
+        isDefault: true,
       },
       {
         id: `tab-${foundry.utils.randomID(16)}`,
