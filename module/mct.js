@@ -9,7 +9,7 @@ class MultipleChatTabs {
         return tabs.filter((tab) => tab.label);
       }
     } catch (e) {
-      console.error("Multiple Chat Tabs error", e);
+      console.error("MCT error", e);
       return [];
     }
     return [];
@@ -19,24 +19,20 @@ class MultipleChatTabs {
   static activeFilter = null;
 
   /**
-   * Add tabs UI
+   * Refresh tab UI
    * @param {jQuery} html
    */
-  static async addTabs(html) {
-    const tabs = this.getTabs();
-    if (tabs.length === 0) return;
+  static async refreshTabUI(html) {
+    html.find(".mct-container").remove();
 
+    const tabs = this.getTabs();
+    if (tabs.length === 0) {
+      html.find("#chat-log .message").show();
+      if (ui.chat) ui.chat.scrollBottom();
+      return;
+    }
     if (!tabs.some((t) => t.id === this.activeFilter)) {
       this.activeFilter = tabs[0]?.id || null;
-    }
-
-    const existingTabs = html.find(".multiple-chat-tabs-nav");
-    if (existingTabs.length > 0) {
-      existingTabs.find(".item").removeClass("active");
-      existingTabs
-        .find(`.item[data-filter="${this.activeFilter}"]`)
-        .addClass("active");
-      return;
     }
 
     const tabsHtml = await renderTemplate(
@@ -45,12 +41,50 @@ class MultipleChatTabs {
     );
     const tabsElement = $(tabsHtml);
 
-    tabsElement.find(".item").removeClass("active");
     tabsElement
       .find(`.item[data-filter="${this.activeFilter}"]`)
       .addClass("active");
 
     html.find("#chat-log").after(tabsElement);
+
+    this._activateTabListeners(html);
+    this.applyFilter(html);
+  }
+
+  /**
+   * Tab UI helper
+   * @param {jQuery} html
+   * @private
+   */
+  static _activateTabListeners(html) {
+    // Tab click listener
+    html
+      .off("click", ".multiple-chat-tabs-nav .item")
+      .on(
+        "click",
+        ".multiple-chat-tabs-nav .item",
+        this._onTabClick.bind(this)
+      );
+
+    const scroller = html.find(".mct-scroller");
+    if (!scroller.length) return;
+
+    this.updateScrollButtons(html);
+
+    // Scroll button click listeners
+    html.off("click", ".scroll-btn").on("click", ".scroll-btn", (event) => {
+      const direction = $(event.currentTarget).hasClass("left") ? -1 : 1;
+      const scrollAmount = scroller.width() * 0.7;
+      scroller.scrollLeft(scroller.scrollLeft() + scrollAmount * direction);
+    });
+
+    // Tabbar scroll listeners
+    scroller.off("scroll").on("scroll", () => this.updateScrollButtons(html));
+    scroller.off("wheel").on("wheel", (event) => {
+      event.preventDefault();
+      const delta = event.originalEvent.deltaX || event.originalEvent.deltaY;
+      scroller.scrollLeft(scroller.scrollLeft() + delta);
+    });
   }
 
   /**
@@ -109,7 +143,7 @@ class MultipleChatTabs {
       if (sourceTab && validTabIds.has(sourceTab)) {
         show = sourceTab === this.activeFilter;
       } else {
-        // No filter messages to show default tab
+        // No Filter message to show default tab
         show = this.activeFilter === firstTabId;
       }
 
@@ -252,9 +286,11 @@ Hooks.once("init", async function () {
       { id: `tab-${foundry.utils.randomID(16)}`, label: "Tab4" },
     ]),
     onChange: () => {
-      if (ui.chat) {
-        ui.chat.render();
-      }
+      setTimeout(() => {
+        if (ui.chat && ui.chat.element) {
+          MultipleChatTabs.refreshTabUI(ui.chat.element);
+        }
+      }, 100);
     },
   });
 
@@ -277,40 +313,7 @@ Hooks.once("init", async function () {
   };
 
   Hooks.on("renderChatLog", async (app, html, data) => {
-    await MultipleChatTabs.addTabs(html);
-    MultipleChatTabs.applyFilter(html);
-
-    // Tab click listener
-    html.off("click", ".multiple-chat-tabs-nav .item");
-    html.on(
-      "click",
-      ".multiple-chat-tabs-nav .item",
-      MultipleChatTabs._onTabClick
-    );
-
-    // Scroll click listener
-    const scroller = html.find(".mct-scroller");
-    if (!scroller.length) return;
-
-    MultipleChatTabs.updateScrollButtons(html);
-
-    html.off("click", ".scroll-btn");
-    html.on("click", ".scroll-btn", (event) => {
-      const direction = $(event.currentTarget).hasClass("left") ? -1 : 1;
-      const scrollAmount = scroller.width() * 0.7;
-      scroller.scrollLeft(scroller.scrollLeft() + scrollAmount * direction);
-    });
-
-    scroller.off("scroll");
-    scroller.on("scroll", () => MultipleChatTabs.updateScrollButtons(html));
-
-    // Wheel listener
-    scroller.off("wheel");
-    scroller.on("wheel", (event) => {
-      event.preventDefault();
-      const delta = event.originalEvent.deltaX || event.originalEvent.deltaY;
-      scroller.scrollLeft(scroller.scrollLeft() + delta);
-    });
+    await MultipleChatTabs.refreshTabUI(html);
   });
 
   Hooks.on("preCreateChatMessage", (message, data, options, userId) => {
