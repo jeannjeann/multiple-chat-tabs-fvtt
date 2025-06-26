@@ -5,6 +5,10 @@
       "label": "Open Settings",
       "hint": "Configure the tabs used to filter chat messages."
     },
+    "context": {
+      "settings": "Setting",
+      "delete": "Delete"
+    },
     "settings": {
       "windowTitle": "Chat Tab Settings",
       "hint": "You can add, delete, and reorder tabs. Drag the handle to reorder, and click the trash icon to delete.",

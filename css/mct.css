@@ -178,3 +178,42 @@
 .mct-settings-sheet .form-group-stacked .reset-settings {
   flex-shrink: 0;
 }
+
+.mct-context-menu {
+  position: fixed;
+  z-index: 1000;
+  background: var(--color-background-app, #f0f0e0);
+  border: 1px solid var(--color-border-light-primary, #c9c7b8);
+  box-shadow: 0 2px 5px var(--color-shadow-dark, rgba(0,0,0,0.3));
+  border-radius: 4px;
+  list-style: none;
+  padding: 3px;
+  margin: 0;
+  /* min-width: 100px; - This line is removed */
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.mct-context-menu li {
+  padding: 4px 8px;
+  cursor: pointer;
+  color: var(--color-text-dark-primary, #191813);
+  white-space: nowrap;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-12);
+  transition: background-color 0.1s ease-in-out;
+}
+
+.mct-context-menu li:hover {
+  background: var(--color-background-highlight-hover, rgba(0,0,0,0.1));
+}
+
+.mct-context-menu li i {
+  width: 12px;
+  text-align: center;
+  color: var(--color-text-dark-secondary, #4b4a44);
+}

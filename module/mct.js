@@ -1,5 +1,6 @@
 import { MultipleChatTabs } from "./multipleChatTabs.js";
 import { registerSettings } from "./settings.js";
+import { TabDetailSettings } from "./tabSettings.js";
 
 /**
  * Init hook
@@ -12,8 +13,14 @@ Hooks.once("init", async function () {
     "modules/multiple-chat-tabs/templates/tab-detail-settings.hbs",
   ];
   await loadTemplates(templatePaths);
-});
 
+  // Open detail from context menu
+  Hooks.on("mct:requestTabEdit", (tabId) => {
+    if (tabId) {
+      new TabDetailSettings(tabId).render(true);
+    }
+  });
+});
 /**
  * Setup hook
  */
@@ -42,6 +49,13 @@ Hooks.once("ready", function () {
         }
       }, 50);
     };
+  }
+
+  // Initial scrollBottom
+  if (ui.chat && ui.chat.element) {
+    setTimeout(() => {
+      ui.chat.scrollBottom();
+    }, 500);
   }
 });
 

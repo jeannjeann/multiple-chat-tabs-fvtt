@@ -156,44 +156,7 @@ export class TabSettings extends FormApplication {
     event.preventDefault();
     const tabItem = $(event.currentTarget).closest(".tab-item");
     const tabId = tabItem.data("tabId");
-    const tabName = tabItem.find(".tab-label").text();
-    if (!tabId) return;
-
-    // Default tab
-    const tabData = MultipleChatTabs.getTabs().find((t) => t.id === tabId);
-    if (tabData?.isDefault) {
-      ui.notifications.warn(
-        game.i18n.localize("MCT.notifications.cannotDeleteDefault")
-      );
-      return;
-    }
-
-    const dialog = new Dialog({
-      title: game.i18n.localize("MCT.dialog.delete.title"),
-      content: game.i18n.format("MCT.dialog.delete.content", { name: tabName }),
-      buttons: {
-        yes: {
-          icon: '<i class="fas fa-trash"></i>',
-          label: game.i18n.localize("MCT.yes"),
-          callback: async () => {
-            let tabs = MultipleChatTabs.getTabs();
-            tabs = tabs.filter((t) => t.id !== tabId);
-            await game.settings.set(
-              "multiple-chat-tabs",
-              "tabs",
-              JSON.stringify(tabs)
-            );
-            this.render(true);
-          },
-        },
-        no: {
-          icon: '<i class="fas fa-times"></i>',
-          label: game.i18n.localize("MCT.no"),
-        },
-      },
-      default: "no",
-    });
-    dialog.render(true);
+    MultipleChatTabs._onDeleteTabRequested(tabId);
   }
 
   async _updateObject(event, formData) {

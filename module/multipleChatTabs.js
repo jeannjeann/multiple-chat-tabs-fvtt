@@ -65,6 +65,92 @@ export class MultipleChatTabs {
         this._onTabClick.bind(this)
       );
 
+    // Context menu listener
+    // --- Start of Custom Context Menu ---
+    // Remove any existing custom context menus before adding new ones
+    $(".mct-context-menu").remove();
+
+    html
+      .off("contextmenu", ".multiple-chat-tabs-nav .item")
+      .on("contextmenu", ".multiple-chat-tabs-nav .item", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        // Close any existing menus
+        $(".mct-context-menu").remove();
+
+        const tabElement = $(event.currentTarget);
+        const tabId = tabElement.data("filter");
+        if (!tabId) return;
+
+        const tab = this.getTabs().find((t) => t.id === tabId);
+        if (!tab) return;
+
+        // Build menu items
+        const menuItems = [];
+        menuItems.push(
+          `<li data-action="edit"><i class="fas fa-cog"></i> ${game.i18n.localize(
+            "MCT.context.settings"
+          )}</li>`
+        );
+        if (!tab.isDefault) {
+          menuItems.push(
+            `<li data-action="delete"><i class="fas fa-trash"></i> ${game.i18n.localize(
+              "MCT.context.delete"
+            )}</li>`
+          );
+        }
+
+        // Create menu element, add to body and position it
+        const menu = $(`<ul class="mct-context-menu"></ul>`).html(
+          menuItems.join("")
+        );
+        $("body").append(menu);
+
+        // --- Start of Position Adjustment Logic ---
+        const menuWidth = menu.outerWidth();
+        const menuHeight = menu.outerHeight();
+        const windowWidth = $(window).width();
+        const windowHeight = $(window).height();
+
+        let top = event.clientY;
+        let left = event.clientX;
+
+        // Adjust horizontal position if the menu goes off-screen to the right
+        if (left + menuWidth > windowWidth) {
+          left = windowWidth - menuWidth - 5; // 5px buffer
+        }
+
+        // Adjust vertical position if the menu goes off-screen to the bottom
+        if (top + menuHeight > windowHeight) {
+          top = windowHeight - menuHeight - 5; // 5px buffer
+        }
+
+        menu.css({
+          position: "fixed",
+          top: `${top}px`,
+          left: `${left}px`,
+        });
+        // --- End of Position Adjustment Logic ---
+
+        // Add click listeners for menu items
+        menu.find("li").on("click", (e) => {
+          const action = $(e.currentTarget).data("action");
+          if (action === "edit") {
+            Hooks.call("mct:requestTabEdit", tabId);
+          } else if (action === "delete") {
+            this._onDeleteTabRequested(tabId);
+          }
+          menu.remove(); // Close menu after action
+        });
+
+        // Add a one-time click listener to the window to close the menu
+        const closeMenu = () => menu.remove();
+        $(window).one("click", closeMenu);
+        $(window).one("contextmenu", closeMenu); // Also close on another right click
+      });
+    // --- End of Custom Context Menu ---
+
     const scroller = html.find(".mct-scroller");
     if (!scroller.length) return;
 
@@ -157,6 +243,61 @@ export class MultipleChatTabs {
     tabs.push(newTab);
     this.activeFilter = newTab.id;
     await game.settings.set("multiple-chat-tabs", "tabs", JSON.stringify(tabs));
+  }
+
+  /**
+   * Delete tab from context menu
+   * @param {string} tabId The ID of the tab to delete.
+   * @private
+   */
+  static _onDeleteTabRequested(tabId) {
+    if (!tabId) return;
+    const tabs = this.getTabs();
+    const tabData = tabs.find((t) => t.id === tabId);
+
+    if (!tabData) return;
+    if (tabData.isDefault) {
+      ui.notifications.warn(
+        game.i18n.localize("MCT.notifications.cannotDeleteDefault")
+      );
+      return;
+    }
+
+    const dialog = new Dialog({
+      title: game.i18n.localize("MCT.dialog.delete.title"),
+      content: game.i18n.format("MCT.dialog.delete.content", {
+        name: tabData.label,
+      }),
+      buttons: {
+        yes: {
+          icon: '<i class="fas fa-trash"></i>',
+          label: game.i18n.localize("MCT.yes"),
+          callback: async () => {
+            const newTabs = tabs.filter((t) => t.id !== tabId);
+            if (this.activeFilter === tabId) {
+              this.activeFilter = newTabs[0]?.id || null;
+            }
+            await game.settings.set(
+              "multiple-chat-tabs",
+              "tabs",
+              JSON.stringify(newTabs)
+            );
+            const settingsWindow = Object.values(ui.windows).find(
+              (w) => w.id === "multiple-chat-tabs-settings"
+            );
+            if (settingsWindow) {
+              settingsWindow.render(true);
+            }
+          },
+        },
+        no: {
+          icon: '<i class="fas fa-times"></i>',
+          label: game.i18n.localize("MCT.no"),
+        },
+      },
+      default: "no",
+    });
+    dialog.render(true);
   }
 
   /**
