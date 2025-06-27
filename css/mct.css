@@ -57,6 +57,22 @@
   cursor: pointer;
 }
 
+.multiple-chat-tabs-nav .item.active .unread-indicator {
+  display: none;
+}
+.unread-indicator {
+  position: absolute;
+  top: 4px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  background-color: var(--color-notification, #f9822a);
+  border-radius: 50%;
+  box-shadow: 0 0 4px var(--color-notification, #f9822a);
+  z-index: 1;
+  pointer-events: none;
+}
+
 .scroll-btn {
   flex-shrink: 0;
   width: 20px;

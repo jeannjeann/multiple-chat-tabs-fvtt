@@ -35,9 +35,15 @@ export class MultipleChatTabs {
       this.activeFilter = tabs[0]?.id || null;
     }
 
+    const unreadTabs = this.getUnreadTabs();
+    const processedTabs = tabs.map((tab) => ({
+      ...tab,
+      isUnread: !!unreadTabs[tab.id],
+    }));
+
     const tabsHtml = await renderTemplate(
       "modules/multiple-chat-tabs/templates/chat-tabs.hbs",
-      { tabs: tabs }
+      { tabs: processedTabs }
     );
     const tabsElement = $(tabsHtml);
 
@@ -165,10 +171,28 @@ export class MultipleChatTabs {
   }
 
   /**
+   * Unread count helper
+   */
+  static getUnreadTabs() {
+    return game.settings.get("multiple-chat-tabs", "unreadTabs") || {};
+  }
+  static async setUnreadStatus(tabId, status) {
+    const unread = foundry.utils.deepClone(this.getUnreadTabs());
+    if (!!unread[tabId] === status) return;
+
+    if (status) {
+      unread[tabId] = true;
+    } else {
+      delete unread[tabId];
+    }
+    await game.settings.set("multiple-chat-tabs", "unreadTabs", unread);
+  }
+
+  /**
    * Click event handler
    * @param {Event} event
    */
-  static _onTabClick(event) {
+  static async _onTabClick(event) {
     event.preventDefault();
     const clickedFilter = event.currentTarget.dataset.filter;
 
@@ -176,12 +200,12 @@ export class MultipleChatTabs {
 
     MultipleChatTabs.activeFilter = clickedFilter;
 
-    const nav = $(event.currentTarget).closest(".multiple-chat-tabs-nav");
-    nav.find(".item").removeClass("active");
-    $(event.currentTarget).addClass("active");
+    if (this.getUnreadTabs()[clickedFilter]) {
+      await this.setUnreadStatus(clickedFilter, false);
+    }
 
     const appElement = $(event.currentTarget).closest(".app");
-    MultipleChatTabs.applyFilter(appElement);
+    await this.refreshTabUI(appElement);
   }
 
   /**

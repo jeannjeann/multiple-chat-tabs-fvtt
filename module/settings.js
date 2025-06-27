@@ -38,4 +38,11 @@ export function registerSettings() {
       }, 100);
     },
   });
+
+  game.settings.register("multiple-chat-tabs", "unreadTabs", {
+    scope: "client",
+    config: false,
+    type: Object,
+    default: {},
+  });
 }

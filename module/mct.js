@@ -68,6 +68,18 @@ Hooks.on("renderChatMessage", (message, html, data) => {
   MultipleChatTabs.applyFilterToMessage(html);
 });
 
+Hooks.on("createChatMessage", async (message) => {
+  const sourceTab = message.getFlag("multiple-chat-tabs", "sourceTab");
+  if (!sourceTab) return;
+
+  if (sourceTab !== MultipleChatTabs.activeFilter) {
+    await MultipleChatTabs.setUnreadStatus(sourceTab, true);
+    if (ui.chat && ui.chat.element) {
+      await MultipleChatTabs.refreshTabUI(ui.chat.element);
+    }
+  }
+});
+
 Hooks.on("preCreateChatMessage", (message, data, options, userId) => {
   message.updateSource({
     "flags.multiple-chat-tabs.sourceTab": MultipleChatTabs.activeFilter,
