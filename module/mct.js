@@ -73,7 +73,7 @@ Hooks.on("createChatMessage", async (message) => {
   if (!sourceTab) return;
 
   if (sourceTab !== MultipleChatTabs.activeFilter) {
-    await MultipleChatTabs.setUnreadStatus(sourceTab, true);
+    await MultipleChatTabs.increaseUnreadCount(sourceTab);
     if (ui.chat && ui.chat.element) {
       await MultipleChatTabs.refreshTabUI(ui.chat.element);
     }

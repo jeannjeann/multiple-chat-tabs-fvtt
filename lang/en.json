@@ -17,6 +17,10 @@
         "reset": "Reset",
         "save": "Save Changes"
       },
+      "unreadCount": {
+        "name": "Display Unread Count",
+        "hint": "If enabled, shows the number of unread messages. If disabled, shows a simple dot instead."
+      },
       "defaults": {
         "main": "Main",
         "roll": "Roll",

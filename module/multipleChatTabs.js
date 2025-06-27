@@ -35,22 +35,24 @@ export class MultipleChatTabs {
       this.activeFilter = tabs[0]?.id || null;
     }
 
-    const unreadTabs = this.getUnreadTabs();
+    const showCount = game.settings.get(
+      "multiple-chat-tabs",
+      "display-unread-count"
+    );
+    const unreadCounts = this.getUnreadCounts();
     const processedTabs = tabs.map((tab) => ({
       ...tab,
-      isUnread: !!unreadTabs[tab.id],
+      unreadCount: unreadCounts[tab.id] || 0,
     }));
 
     const tabsHtml = await renderTemplate(
       "modules/multiple-chat-tabs/templates/chat-tabs.hbs",
-      { tabs: processedTabs }
+      { tabs: processedTabs, showCount: showCount }
     );
     const tabsElement = $(tabsHtml);
-
     tabsElement
       .find(`.item[data-filter="${this.activeFilter}"]`)
       .addClass("active");
-
     html.find("#chat-log").after(tabsElement);
 
     this._activateTabListeners(html);
@@ -171,7 +173,7 @@ export class MultipleChatTabs {
   }
 
   /**
-   * Unread count helper
+   * Unread count helpers
    */
   static getUnreadTabs() {
     return game.settings.get("multiple-chat-tabs", "unreadTabs") || {};
@@ -187,6 +189,20 @@ export class MultipleChatTabs {
     }
     await game.settings.set("multiple-chat-tabs", "unreadTabs", unread);
   }
+  static getUnreadCounts() {
+    return game.settings.get("multiple-chat-tabs", "unreadTabs") || {};
+  }
+  static async increaseUnreadCount(tabId) {
+    const counts = foundry.utils.deepClone(this.getUnreadCounts());
+    counts[tabId] = (counts[tabId] || 0) + 1;
+    await game.settings.set("multiple-chat-tabs", "unreadTabs", counts);
+  }
+  static async resetUnreadCount(tabId) {
+    const counts = foundry.utils.deepClone(this.getUnreadCounts());
+    if (!counts[tabId]) return;
+    delete counts[tabId];
+    await game.settings.set("multiple-chat-tabs", "unreadTabs", counts);
+  }
 
   /**
    * Click event handler
@@ -200,8 +216,8 @@ export class MultipleChatTabs {
 
     MultipleChatTabs.activeFilter = clickedFilter;
 
-    if (this.getUnreadTabs()[clickedFilter]) {
-      await this.setUnreadStatus(clickedFilter, false);
+    if (this.getUnreadCounts()[clickedFilter]) {
+      await this.resetUnreadCount(clickedFilter);
     }
 
     const appElement = $(event.currentTarget).closest(".app");
