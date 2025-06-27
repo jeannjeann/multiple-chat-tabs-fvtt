@@ -52,8 +52,6 @@
     "notifications": {
       "cannotDeleteDefault": "デフォルトのタブは削除できません。",
       "cannotDragDefault": "デフォルトのタブは並べ替えできません。"
-    },
-    "yes": "はい",
-    "no": "いいえ"
+    }
   }
 }

@@ -21,6 +21,7 @@ Hooks.once("init", async function () {
     }
   });
 });
+
 /**
  * Setup hook
  */
@@ -61,6 +62,10 @@ Hooks.once("ready", function () {
 
 Hooks.on("renderChatLog", async (app, html, data) => {
   await MultipleChatTabs.refreshTabUI(html);
+});
+
+Hooks.on("renderChatMessage", (message, html, data) => {
+  MultipleChatTabs.applyFilterToMessage(html);
 });
 
 Hooks.on("preCreateChatMessage", (message, data, options, userId) => {

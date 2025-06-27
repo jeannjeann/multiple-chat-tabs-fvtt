@@ -119,9 +119,9 @@ export class TabSettings extends FormApplication {
       title: game.i18n.localize("MCT.dialog.reset.title"),
       content: `<p>${game.i18n.localize("MCT.dialog.reset.content")}</p>`,
       buttons: {
-        yes: {
+        ok: {
           icon: '<i class="fas fa-check"></i>',
-          label: game.i18n.localize("MCT.yes"),
+          label: game.i18n.localize("OK"),
           callback: async () => {
             const defaultSettings = game.settings.settings.get(
               "multiple-chat-tabs.tabs"
@@ -134,12 +134,12 @@ export class TabSettings extends FormApplication {
             this.render(true);
           },
         },
-        no: {
+        cancel: {
           icon: '<i class="fas fa-times"></i>',
-          label: game.i18n.localize("MCT.no"),
+          label: game.i18n.localize("Cancel"),
         },
       },
-      default: "no",
+      default: "cancel",
     });
     dialog.render(true);
   }

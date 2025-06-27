@@ -1,3 +1,5 @@
+import { MessageFilter } from "./messageFilter.js";
+
 // MultipleChatTabs Class
 export class MultipleChatTabs {
   // Helper to get configured tabs
@@ -14,7 +16,6 @@ export class MultipleChatTabs {
     return [];
   }
 
-  // Set default tab
   static activeFilter = null;
 
   /**
@@ -66,8 +67,6 @@ export class MultipleChatTabs {
       );
 
     // Context menu listener
-    // --- Start of Custom Context Menu ---
-    // Remove any existing custom context menus before adding new ones
     $(".mct-context-menu").remove();
 
     html
@@ -76,17 +75,15 @@ export class MultipleChatTabs {
         event.preventDefault();
         event.stopPropagation();
 
-        // Close any existing menus
         $(".mct-context-menu").remove();
 
         const tabElement = $(event.currentTarget);
         const tabId = tabElement.data("filter");
         if (!tabId) return;
-
         const tab = this.getTabs().find((t) => t.id === tabId);
         if (!tab) return;
 
-        // Build menu items
+        // Menu items
         const menuItems = [];
         menuItems.push(
           `<li data-action="edit"><i class="fas fa-cog"></i> ${game.i18n.localize(
@@ -101,39 +98,32 @@ export class MultipleChatTabs {
           );
         }
 
-        // Create menu element, add to body and position it
         const menu = $(`<ul class="mct-context-menu"></ul>`).html(
           menuItems.join("")
         );
         $("body").append(menu);
 
-        // --- Start of Position Adjustment Logic ---
+        // Position Adjust
         const menuWidth = menu.outerWidth();
         const menuHeight = menu.outerHeight();
         const windowWidth = $(window).width();
         const windowHeight = $(window).height();
-
         let top = event.clientY;
         let left = event.clientX;
 
-        // Adjust horizontal position if the menu goes off-screen to the right
         if (left + menuWidth > windowWidth) {
-          left = windowWidth - menuWidth - 5; // 5px buffer
+          left = windowWidth - menuWidth - 5;
         }
-
-        // Adjust vertical position if the menu goes off-screen to the bottom
         if (top + menuHeight > windowHeight) {
-          top = windowHeight - menuHeight - 5; // 5px buffer
+          top = windowHeight - menuHeight - 5;
         }
-
         menu.css({
           position: "fixed",
           top: `${top}px`,
           left: `${left}px`,
         });
-        // --- End of Position Adjustment Logic ---
 
-        // Add click listeners for menu items
+        // Menu click listeners
         menu.find("li").on("click", (e) => {
           const action = $(e.currentTarget).data("action");
           if (action === "edit") {
@@ -141,22 +131,19 @@ export class MultipleChatTabs {
           } else if (action === "delete") {
             this._onDeleteTabRequested(tabId);
           }
-          menu.remove(); // Close menu after action
+          menu.remove();
         });
 
-        // Add a one-time click listener to the window to close the menu
         const closeMenu = () => menu.remove();
         $(window).one("click", closeMenu);
-        $(window).one("contextmenu", closeMenu); // Also close on another right click
+        $(window).one("contextmenu", closeMenu);
       });
-    // --- End of Custom Context Menu ---
 
+    // Message Scroll listeners
     const scroller = html.find(".mct-scroller");
     if (!scroller.length) return;
-
     this.updateScrollButtons(html);
 
-    // Scroll button click listeners
     html.off("click", ".scroll-btn").on("click", ".scroll-btn", (event) => {
       const direction = $(event.currentTarget).hasClass("left") ? -1 : 1;
       const scrollAmount = scroller.width() * 0.7;
@@ -269,9 +256,9 @@ export class MultipleChatTabs {
         name: tabData.label,
       }),
       buttons: {
-        yes: {
+        delete: {
           icon: '<i class="fas fa-trash"></i>',
-          label: game.i18n.localize("MCT.yes"),
+          label: game.i18n.localize("Delete"),
           callback: async () => {
             const newTabs = tabs.filter((t) => t.id !== tabId);
             if (this.activeFilter === tabId) {
@@ -290,61 +277,48 @@ export class MultipleChatTabs {
             }
           },
         },
-        no: {
+        cancel: {
           icon: '<i class="fas fa-times"></i>',
-          label: game.i18n.localize("MCT.no"),
+          label: game.i18n.localize("Cancel"),
         },
       },
-      default: "no",
+      default: "cancel",
     });
     dialog.render(true);
   }
 
   /**
-   * Separate chat log and show
+   * Separate message
    * @param {jQuery} [scope]
    */
   static applyFilter(scope) {
     const chatLog = scope ? scope.find("#chat-log") : $("#chat-log");
     if (!chatLog.length) return;
 
-    // Get tabID
-    const tabs = this.getTabs();
-    if (tabs.length === 0) {
-      chatLog.find(".message").show();
-      if (ui.chat) ui.chat.scrollBottom();
-      return;
-    }
-    const validTabIds = new Set(tabs.map((t) => t.id));
-    const firstTabId = tabs[0]?.id;
-
     const messages = chatLog.find(".message");
-
     messages.each((i, el) => {
-      const messageElement = $(el);
-      const message = game.messages.get(messageElement.data("messageId"));
-
-      if (!message) {
-        messageElement.show();
-        return;
-      }
-
-      let show = false;
-      const sourceTab = message.getFlag("multiple-chat-tabs", "sourceTab");
-
-      // Check tab existing
-      if (sourceTab && validTabIds.has(sourceTab)) {
-        show = sourceTab === this.activeFilter;
-      } else {
-        // No Filter message to show default tab
-        show = this.activeFilter === firstTabId;
-      }
-
-      messageElement.toggle(show);
+      this.applyFilterToMessage($(el));
     });
 
     if (ui.chat) {
       ui.chat.scrollBottom();
     }
+  }
+
+  /**
+   * Filtering message
+   * @param {jQuery} messageElement The jQuery element for a single .message
+   */
+  static applyFilterToMessage(messageElement) {
+    const allTabs = this.getTabs();
+    const message = game.messages.get(messageElement.data("messageId"));
+
+    const show = MessageFilter.filterMessage(
+      message,
+      allTabs,
+      this.activeFilter
+    );
+
+    messageElement.toggle(show);
   }
 }

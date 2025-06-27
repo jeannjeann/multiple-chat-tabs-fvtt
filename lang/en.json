@@ -52,8 +52,6 @@
     "notifications": {
       "cannotDeleteDefault": "The default tab cannot be deleted.",
       "cannotDragDefault": "The default tab cannot be reordered."
-    },
-    "yes": "Yes",
-    "no": "No"
+    }
   }
 }
