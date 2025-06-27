@@ -36,6 +36,10 @@
     "detailSettings": {
       "windowTitle": "Tab Detail Settings",
       "label": "Tab Name",
+      "showAllMessages": {
+        "label": "Show All Messages",
+        "hint": "ON: Show all messages regardless of settings in other tabs."
+      },
       "forceDisplayTitle": "Force Message Display",
       "forceDisplayHint": "Force display setting by messages type",
       "tooltips": {

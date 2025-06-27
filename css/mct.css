@@ -251,3 +251,35 @@
   text-align: center;
   color: var(--color-text-dark-secondary, #4b4a44);
 }
+
+#multiple-chat-tabs-detail-settings .form-group.mct-simple-row {
+  display: flex;
+  align-items: center;
+  gap: 1em;
+  min-height: 28px;
+}
+
+#multiple-chat-tabs-detail-settings .form-group.mct-simple-row > label {
+  flex-grow: 1;
+  margin: 0;
+}
+
+#multiple-chat-tabs-detail-settings .form-group.mct-simple-row > input,
+#multiple-chat-tabs-detail-settings .form-group.mct-simple-row > select {
+  flex-shrink: 0; 
+}
+
+#multiple-chat-tabs-detail-settings .form-group.mct-simple-row:has(> input[type="checkbox"]) > label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#multiple-chat-tabs-detail-settings .form-group.mct-simple-row:has(> select) > label {
+  text-align: right; 
+}
+
+#multiple-chat-tabs-detail-settings .form-group.mct-simple-row:has(> select) > select {
+  flex-grow: 0; 
+  flex-shrink: 0;
+}

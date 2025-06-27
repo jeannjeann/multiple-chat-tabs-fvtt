@@ -271,6 +271,7 @@ export class TabDetailSettings extends FormApplication {
     }
 
     allTabs[tabIndex].label = expandedData.label;
+    allTabs[tabIndex].showAllMessages = expandedData.showAllMessages ?? false;
 
     if (Object.keys(forceSettings).length > 0) {
       allTabs[tabIndex].force = forceSettings;

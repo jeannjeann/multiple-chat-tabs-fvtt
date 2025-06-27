@@ -72,8 +72,13 @@ Hooks.on("renderChatMessage", (message, html, data) => {
 Hooks.on("createChatMessage", async (message) => {
   const allTabs = MultipleChatTabs.getTabs();
   if (allTabs.length === 0) return;
-
   const targetTabIds = MessageFilter.getVisibleTabsForMessage(message, allTabs);
+
+  allTabs.forEach((tab) => {
+    if (tab.showAllMessages) {
+      targetTabIds.add(tab.id);
+    }
+  });
 
   let needsRefresh = false;
   for (const tabId of targetTabIds) {

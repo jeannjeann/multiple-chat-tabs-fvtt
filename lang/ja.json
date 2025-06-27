@@ -36,8 +36,12 @@
     "detailSettings": {
       "windowTitle": "タブ詳細設定",
       "label": "タブ名",
+      "showAllMessages": {
+        "label": "このタブにすべてのメッセージを表示",
+        "hint": "ON: 他のタブの設定を無視してこのタブにすべてのメッセージを表示する"
+      },
       "forceDisplayTitle": "メッセージの強制表示",
-      "forceDisplayHint": "メッセージタイプ別の強制表示設定",
+      "forceDisplayHint": "メッセージタイプ別に強制表示を設定する",
       "tooltips": {
         "moveDisabled": "「{tabName}」タブで「このタブだけに表示」が設定されているため選択できません"
       }

@@ -33,17 +33,37 @@ export function registerSettings() {
         id: `tab-${foundry.utils.randomID(16)}`,
         label: game.i18n.localize("MCT.settings.defaults.main"),
         isDefault: true,
+        showAllMessages: false,
+        force: {
+          ic: "none",
+          ooc: "none",
+          roll: "none",
+          other: "none",
+        },
       },
       {
         id: `tab-${foundry.utils.randomID(16)}`,
         label: game.i18n.localize("MCT.settings.defaults.roll"),
+        isDefault: false,
+        showAllMessages: false,
         force: {
+          ic: "none",
+          ooc: "none",
           roll: "move",
+          other: "none",
         },
       },
       {
         id: `tab-${foundry.utils.randomID(16)}`,
         label: game.i18n.localize("MCT.settings.defaults.sub"),
+        isDefault: false,
+        showAllMessages: false,
+        force: {
+          ic: "none",
+          ooc: "none",
+          roll: "none",
+          other: "none",
+        },
       },
     ]),
     onChange: () => {

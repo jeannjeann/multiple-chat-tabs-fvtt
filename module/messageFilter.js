@@ -57,20 +57,22 @@ export class MessageFilter {
   }
 
   /**
-   * Filtering logic
-   * @param {ChatMessage} message
-   * @param {Array<object>} allTabs
-   * @param {string} activeFilter
+   * Active tab filter
+   * @param {ChatMessage}
+   * @param {Array<object>}
+   * @param {string}
    * @returns {boolean}
    */
   static filterMessage(message, allTabs, activeFilter) {
     if (!message) return true;
     if (allTabs.length === 0) return true;
 
-    // Get the set of all tabs where this message should be visible
-    const visibleTabs = this.getVisibleTabsForMessage(message, allTabs);
+    const activeTab = allTabs.find((t) => t.id === activeFilter);
+    if (activeTab?.showAllMessages) {
+      return true;
+    }
 
-    // Show the message if the active tab is in that set
+    const visibleTabs = this.getVisibleTabsForMessage(message, allTabs);
     return visibleTabs.has(activeFilter);
   }
 }

@@ -6,21 +6,25 @@
 
     <hr>
 
-    <h3 class="form-header">{{localize "MCT.detailSettings.forceDisplayTitle"}}</h3>
+    <div class="form-group mct-simple-row">
+        <label for="showAllMessages">{{localize "MCT.detailSettings.showAllMessages.label"}}</label>
+        <input type="checkbox" id="showAllMessages" name="showAllMessages" {{#if tab.showAllMessages}}checked{{/if}}>
+    </div>
+    <p class="notes" style="margin-top: -5px; margin-bottom: 10px;">{{localize "MCT.detailSettings.showAllMessages.hint"}}</p>
+
+    <h4 class="form-header">{{localize "MCT.detailSettings.forceDisplayTitle"}}</h4>
     <p class="notes">{{localize "MCT.detailSettings.forceDisplayHint"}}</p>
 
     {{#each forceSettings as |setting type|}}
-    <div class="form-group">
+    <div class="form-group mct-simple-row">
         <label>{{localize setting.typeLabel}}</label>
-        <div class="form-fields">
-            <select name="force.{{type}}">
-                {{#each setting.options as |opt|}}
-                <option value="{{opt.key}}" {{#if opt.selected}}selected{{/if}} {{#if opt.disabled}}disabled title="{{opt.tooltip}}"{{/if}}>
-                    {{localize opt.label}}
-                </option>
-                {{/each}}
-            </select>
-        </div>
+        <select name="force.{{type}}">
+            {{#each setting.options as |opt|}}
+            <option value="{{opt.key}}" {{#if opt.selected}}selected{{/if}} {{#if opt.disabled}}disabled title="{{opt.tooltip}}"{{/if}}>
+                {{localize opt.label}}
+            </option>
+            {{/each}}
+        </select>
     </div>
     {{/each}}
 
