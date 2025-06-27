@@ -328,6 +328,14 @@ export class MultipleChatTabs {
     tabs.push(newTab);
     this.activeFilter = newTab.id;
     await game.settings.set("multiple-chat-tabs", "tabs", JSON.stringify(tabs));
+
+    // Refresh the TabSetting Window
+    const settingsWindow = Object.values(ui.windows).find(
+      (w) => w.id === "multiple-chat-tabs-settings"
+    );
+    if (settingsWindow) {
+      settingsWindow.render(true);
+    }
   }
 
   /**

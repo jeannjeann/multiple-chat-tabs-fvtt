@@ -3,7 +3,8 @@
   align-items: center;
   gap: 4px;
   flex: none;
-  margin-top: 5px;
+  margin-top: 0px;
+  margin-bottom: 10px;
 }
 
 .mct-scroller {
@@ -11,7 +12,7 @@
   overflow-x: hidden;
   scroll-behavior: smooth;
   border-top: 1px solid var(--color-border-light-tertiary);
-  padding-top: 5px;
+  padding-top: 2px;
 }
 
 .multiple-chat-tabs-nav {
@@ -26,10 +27,10 @@
 .multiple-chat-tabs-nav .item {
   flex-grow: 0;
   text-align: center;
-  font-size: var(--font-size-14);
+  font-size: var(--font-size-12);
   color: var(--sidebar-color-text);
   opacity: 0.7;
-  padding: 5px 8px;
+  padding: 3px 6px;
   position: relative;
   transition: opacity 0.2s ease, border-color 0.2s ease;
   white-space: nowrap;
@@ -44,7 +45,7 @@
 .multiple-chat-tabs-nav .item.active::before {
   content: "";
   position: absolute;
-  top: -5px;
+  top: -2px;
   left: 0;
   right: 0;
   height: 2px;
@@ -68,24 +69,24 @@
 }
 
 .unread-indicator.count {
-  top: 0px;
-  right: -2px;
-  height: 13px;
-  line-height: 13px;
-  min-width: 13px;
+  top: -1px;
+  right: -4px;
+  height: 12px;
+  line-height: 12px;
+  min-width: 12px;
   padding: 0 4px;
   background: var(--color-notification, #f9822a);
   color: #FFF;
-  border-radius: 7px;
+  border-radius: 6px;
   font-size: 8px;
   text-align: center;
 }
 
 .unread-indicator.dot {
-  top: 4px;
-  right: 2px;
-  width: 8px;
-  height: 8px;
+  top: 2px;
+  right: 0px;
+  width: 7px;
+  height: 7px;
   background-color: var(--color-notification, #f9822a);
   border-radius: 50%;
   box-shadow: 0 0 4px var(--color-notification, #f9822a);
@@ -93,8 +94,8 @@
 
 .scroll-btn {
   flex-shrink: 0;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   padding: 0;
   border: none;
   background: transparent;
@@ -110,8 +111,8 @@
 
 .add-tab-btn {
   flex-shrink: 0;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   padding: 0;
   margin-left: 4px;
   border: none;
@@ -223,7 +224,6 @@
   list-style: none;
   padding: 3px;
   margin: 0;
-  /* min-width: 100px; - This line is removed */
   display: flex;
   flex-direction: column;
   gap: 1px;

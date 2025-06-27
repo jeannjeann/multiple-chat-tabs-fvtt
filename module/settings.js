@@ -34,6 +34,7 @@ export function registerSettings() {
         label: game.i18n.localize("MCT.settings.defaults.main"),
         isDefault: true,
         showAllMessages: false,
+        forceOOC: false,
         force: {
           ic: "none",
           ooc: "none",
@@ -46,6 +47,7 @@ export function registerSettings() {
         label: game.i18n.localize("MCT.settings.defaults.roll"),
         isDefault: false,
         showAllMessages: false,
+        forceOOC: false,
         force: {
           ic: "none",
           ooc: "none",
@@ -58,6 +60,7 @@ export function registerSettings() {
         label: game.i18n.localize("MCT.settings.defaults.sub"),
         isDefault: false,
         showAllMessages: false,
+        forceOOC: true,
         force: {
           ic: "none",
           ooc: "none",

@@ -1,5 +1,7 @@
 import { MultipleChatTabs } from "./multipleChatTabs.js";
 
+// Include TabSettings Class, TabDetailSettings Class
+
 // TabSettings Class
 export class TabSettings extends FormApplication {
   static get defaultOptions() {
@@ -272,6 +274,7 @@ export class TabDetailSettings extends FormApplication {
 
     allTabs[tabIndex].label = expandedData.label;
     allTabs[tabIndex].showAllMessages = expandedData.showAllMessages ?? false;
+    allTabs[tabIndex].forceOOC = expandedData.forceOOC ?? false;
 
     if (Object.keys(forceSettings).length > 0) {
       allTabs[tabIndex].force = forceSettings;

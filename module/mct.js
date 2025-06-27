@@ -94,7 +94,24 @@ Hooks.on("createChatMessage", async (message) => {
 });
 
 Hooks.on("preCreateChatMessage", (message, data, options, userId) => {
-  message.updateSource({
-    "flags.multiple-chat-tabs.sourceTab": MultipleChatTabs.activeFilter,
-  });
+  const allTabs = MultipleChatTabs.getTabs();
+  const activeTabId = MultipleChatTabs.activeFilter || allTabs[0]?.id;
+
+  const updateData = { "flags.multiple-chat-tabs.sourceTab": activeTabId };
+
+  if (activeTabId) {
+    const activeTab = allTabs.find((t) => t.id === activeTabId);
+
+    // Force OOC check
+    if (activeTab?.forceOOC) {
+      updateData.style = CONST.CHAT_MESSAGE_STYLES.OOC;
+      updateData.speaker = {
+        scene: null,
+        actor: null,
+        token: null,
+        alias: undefined,
+      };
+    }
+  }
+  message.updateSource(updateData);
 });

@@ -12,6 +12,12 @@
     </div>
     <p class="notes" style="margin-top: -5px; margin-bottom: 10px;">{{localize "MCT.detailSettings.showAllMessages.hint"}}</p>
 
+    <div class="form-group mct-simple-row">
+        <label for="forceOOC">{{localize "MCT.detailSettings.forceOOC.label"}}</label>
+        <input type="checkbox" id="forceOOC" name="forceOOC" {{#if tab.forceOOC}}checked{{/if}}>
+    </div>
+    <p class="notes" style="margin-top: -5px; margin-bottom: 10px;">{{localize "MCT.detailSettings.forceOOC.hint"}}</p>
+
     <h4 class="form-header">{{localize "MCT.detailSettings.forceDisplayTitle"}}</h4>
     <p class="notes">{{localize "MCT.detailSettings.forceDisplayHint"}}</p>
 
