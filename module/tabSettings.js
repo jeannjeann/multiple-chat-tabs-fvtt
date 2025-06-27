@@ -47,7 +47,7 @@ export class TabSettings extends FormApplication {
     const tabId = item.dataset.tabId;
     const tabData = MultipleChatTabs.getTabs().find((t) => t.id === tabId);
 
-    // Default tab
+    // Prevent dragging the default tab
     if (tabData?.isDefault) {
       event.preventDefault();
       ui.notifications.warn(
@@ -77,7 +77,7 @@ export class TabSettings extends FormApplication {
     );
     if (!draggedElement.length) return;
 
-    const dropTarget = event.currentTarget;
+    const dropTarget = event.currentTarget.closest(".tab-item");
     if (!dropTarget || dropTarget === draggedElement[0]) return;
 
     if (dropTarget.dataset.isDefault === "true") {
@@ -89,31 +89,32 @@ export class TabSettings extends FormApplication {
 
     dropTarget.before(draggedElement[0]);
 
-    const newTabs = [];
-    this.element.find(".tab-list .tab-item").each((index, el) => {
-      const element = $(el);
-      const tabId = element.data("tabId");
-      const tabData = MultipleChatTabs.getTabs().find((t) => t.id === tabId);
+    let tabs = MultipleChatTabs.getTabs();
+    const defaultTab = tabs.find((t) => t.isDefault) || tabs[0];
+    const otherTabs = tabs.filter((t) => t.id !== defaultTab.id);
 
-      if (tabData) {
-        newTabs.push({
-          ...tabData,
-          isDefault: index === 0,
-        });
-      }
-    });
+    const newOrder = [];
+    this.element
+      .find(".tab-item:not([data-is-default='true'])")
+      .each((i, el) => {
+        const tabId = $(el).data("tab-id");
+        const foundTab = otherTabs.find((t) => t.id === tabId);
+        if (foundTab) newOrder.push(foundTab);
+      });
 
-    // Clean up old isDefault flags
-    newTabs.forEach((tab, index) => {
-      if (index > 0) delete tab.isDefault;
+    const finalTabs = [defaultTab, ...newOrder];
+
+    finalTabs.forEach((tab, index) => {
+      tab.isDefault = index === 0;
+      if (!tab.isDefault) delete tab.isDefault;
     });
 
     await game.settings.set(
       "multiple-chat-tabs",
       "tabs",
-      JSON.stringify(newTabs)
+      JSON.stringify(finalTabs)
     );
-    this.render(true); // Re-render to reflect changes immediately
+    this.render(true);
   }
 
   async _onAddTab(event) {
@@ -164,7 +165,7 @@ export class TabSettings extends FormApplication {
     dialog.render(true);
   }
 
-  async _onEditTab(event) {
+  _onEditTab(event) {
     event.preventDefault();
     const tabId = $(event.currentTarget).closest(".tab-item").data("tabId");
     if (tabId) {
@@ -172,7 +173,7 @@ export class TabSettings extends FormApplication {
     }
   }
 
-  async _onDeleteTab(event) {
+  _onDeleteTab(event) {
     event.preventDefault();
     const tabItem = $(event.currentTarget).closest(".tab-item");
     const tabId = tabItem.data("tabId");
@@ -184,7 +185,7 @@ export class TabSettings extends FormApplication {
   }
 }
 
-// Tab details setting
+// TabDetailSetting Class
 export class TabDetailSettings extends FormApplication {
   constructor(tabId, options = {}) {
     super(options);
@@ -196,7 +197,7 @@ export class TabDetailSettings extends FormApplication {
       title: game.i18n.localize("MCT.detailSettings.windowTitle"),
       id: "multiple-chat-tabs-detail-settings",
       template: "modules/multiple-chat-tabs/templates/tab-detail-settings.hbs",
-      width: 400,
+      width: 480,
       height: "auto",
       resizable: true,
     });
@@ -205,7 +206,51 @@ export class TabDetailSettings extends FormApplication {
   getData(options) {
     const data = super.getData(options);
     const allTabs = MultipleChatTabs.getTabs();
-    data.tab = allTabs.find((t) => t.id === this.tabId);
+    const tab = allTabs.find((t) => t.id === this.tabId);
+    if (!tab) return data;
+    data.tab = tab;
+
+    const messageTypes = {
+      ic: "IC",
+      ooc: "OOC",
+      roll: "Roll",
+      other: "Other",
+    };
+    const baseOptions = [
+      { key: "none", label: "MCT.forceOptions.none" },
+      { key: "duplicate", label: "MCT.forceOptions.duplicate" },
+      { key: "move", label: "MCT.forceOptions.move" },
+    ];
+    const otherTabs = allTabs.filter((t) => t.id !== this.tabId);
+    data.forceSettings = {};
+    const currentForceSettings = tab.force || {};
+
+    for (const type in messageTypes) {
+      const movingTab = otherTabs.find((t) => t.force?.[type] === "move");
+      const dynamicOptions = baseOptions.map((opt) => {
+        const isDisabled =
+          (opt.key === "move" || opt.key === "duplicate") && movingTab;
+        let tooltip = null;
+        if (isDisabled) {
+          tooltip = game.i18n.format(
+            "MCT.detailSettings.tooltips.moveDisabled",
+            {
+              tabName: movingTab.label,
+            }
+          );
+        }
+        return {
+          ...opt,
+          selected: (currentForceSettings[type] || "none") === opt.key,
+          disabled: isDisabled,
+          tooltip: tooltip,
+        };
+      });
+      data.forceSettings[type] = {
+        options: dynamicOptions,
+        typeLabel: `MCT.messageTypes.${type}`,
+      };
+    }
     return data;
   }
 
@@ -216,7 +261,22 @@ export class TabDetailSettings extends FormApplication {
     const tabIndex = allTabs.findIndex((t) => t.id === this.tabId);
     if (tabIndex === -1) return;
 
-    allTabs[tabIndex].label = formData.label;
+    const expandedData = foundry.utils.expandObject(formData);
+
+    const forceSettings = expandedData.force || {};
+    for (const key in forceSettings) {
+      if (forceSettings[key] === "none") {
+        delete forceSettings[key];
+      }
+    }
+
+    allTabs[tabIndex].label = expandedData.label;
+
+    if (Object.keys(forceSettings).length > 0) {
+      allTabs[tabIndex].force = forceSettings;
+    } else {
+      delete allTabs[tabIndex].force;
+    }
 
     await game.settings.set(
       "multiple-chat-tabs",

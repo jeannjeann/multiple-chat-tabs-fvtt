@@ -6,7 +6,8 @@
     },
     "context": {
       "settings": "設定",
-      "delete": "削除"
+      "delete": "削除",
+      "tabSettings": "タブ設定"
     },
     "settings": {
       "windowTitle": "チャットタブ設定",
@@ -34,7 +35,23 @@
     },
     "detailSettings": {
       "windowTitle": "タブ詳細設定",
-      "label": "タブ名"
+      "label": "タブ名",
+      "forceDisplayTitle": "メッセージの強制表示",
+      "forceDisplayHint": "メッセージタイプ別の強制表示設定",
+      "tooltips": {
+        "moveDisabled": "「{tabName}」タブで「このタブだけに表示」が設定されているため選択できません"
+      }
+    },
+    "forceOptions": {
+      "none": "強制表示なし",
+      "duplicate": "アクティブタブとこのタブに表示",
+      "move": "このタブだけに表示 "
+    },
+    "messageTypes": {
+      "ic": "キャラクター発言 (IC)",
+      "ooc": "プレイヤー発言 (OOC)",
+      "roll": "ロール結果",
+      "other": "その他"
     },
     "tabs": {
       "tooltips": {

@@ -6,7 +6,8 @@
     },
     "context": {
       "settings": "Setting",
-      "delete": "Delete"
+      "delete": "Delete",
+      "tabSettings": "TabConfig"
     },
     "settings": {
       "windowTitle": "Chat Tab Settings",
@@ -34,7 +35,23 @@
     },
     "detailSettings": {
       "windowTitle": "Tab Detail Settings",
-      "label": "Tab Name"
+      "label": "Tab Name",
+      "forceDisplayTitle": "Force Message Display",
+      "forceDisplayHint": "Force display setting by messages type",
+      "tooltips": {
+        "moveDisabled": "Unavailable as 'Display in This Tab Only' is set on the '{tabName}' tab."
+      }
+    },
+    "forceOptions": {
+      "none": "No Forced Display",
+      "duplicate": "Display in Active Tab and This Tab",
+      "move": "Display in This Tab Only"
+    },
+    "messageTypes": {
+      "ic": "In-Character (IC)",
+      "ooc": "Out-of-Character (OOC)",
+      "roll": "Rolls",
+      "other": "Other"
     },
     "tabs": {
       "tooltips": {

@@ -176,6 +176,58 @@ export class MultipleChatTabs {
     html
       .off("click", ".add-tab-btn")
       .on("click", ".add-tab-btn", this._onAddTabClick.bind(this));
+
+    // Add tab button context menu listener
+    html
+      .off("contextmenu", ".add-tab-btn")
+      .on("contextmenu", ".add-tab-btn", (event) => {
+        if (!game.user.isGM) return;
+        event.preventDefault();
+        event.stopPropagation();
+
+        $(".mct-context-menu").remove();
+
+        const menuItems = [
+          `<li data-action="settings"><i class="fas fa-tasks"></i> ${game.i18n.localize(
+            "MCT.context.tabSettings"
+          )}</li>`,
+        ];
+
+        const menu = $(`<ul class="mct-context-menu"></ul>`).html(
+          menuItems.join("")
+        );
+        $("body").append(menu);
+
+        const menuWidth = menu.outerWidth();
+        const menuHeight = menu.outerHeight();
+        const windowWidth = $(window).width();
+        const windowHeight = $(window).height();
+        let top = event.clientY;
+        let left = event.clientX;
+
+        if (left + menuWidth > windowWidth) {
+          left = windowWidth - menuWidth - 5;
+        }
+        if (top + menuHeight > windowHeight) {
+          top = windowHeight - menuHeight - 5;
+        }
+        menu.css({ position: "fixed", top: `${top}px`, left: `${left}px` });
+
+        menu.find("li[data-action='settings']").on("click", (e) => {
+          const menuSetting = game.settings.menus.get(
+            "multiple-chat-tabs.tab-settings"
+          );
+          if (menuSetting) {
+            const app = new menuSetting.type();
+            app.render(true);
+          }
+          menu.remove();
+        });
+
+        const closeMenu = () => menu.remove();
+        $(window).one("click", closeMenu);
+        $(window).one("contextmenu", closeMenu);
+      });
   }
 
   /**

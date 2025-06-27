@@ -4,6 +4,26 @@
         <input type="text" id="label" name="label" value="{{tab.label}}">
     </div>
 
+    <hr>
+
+    <h3 class="form-header">{{localize "MCT.detailSettings.forceDisplayTitle"}}</h3>
+    <p class="notes">{{localize "MCT.detailSettings.forceDisplayHint"}}</p>
+
+    {{#each forceSettings as |setting type|}}
+    <div class="form-group">
+        <label>{{localize setting.typeLabel}}</label>
+        <div class="form-fields">
+            <select name="force.{{type}}">
+                {{#each setting.options as |opt|}}
+                <option value="{{opt.key}}" {{#if opt.selected}}selected{{/if}} {{#if opt.disabled}}disabled title="{{opt.tooltip}}"{{/if}}>
+                    {{localize opt.label}}
+                </option>
+                {{/each}}
+            </select>
+        </div>
+    </div>
+    {{/each}}
+
     <footer class="sheet-footer flexrow">
         <button type="submit" name="submit">
             <i class="far fa-save"></i> {{localize "MCT.save"}}

@@ -37,6 +37,9 @@ export function registerSettings() {
       {
         id: `tab-${foundry.utils.randomID(16)}`,
         label: game.i18n.localize("MCT.settings.defaults.roll"),
+        force: {
+          roll: "move",
+        },
       },
       {
         id: `tab-${foundry.utils.randomID(16)}`,

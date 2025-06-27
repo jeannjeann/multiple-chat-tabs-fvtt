@@ -1,6 +1,7 @@
 import { MultipleChatTabs } from "./multipleChatTabs.js";
 import { registerSettings } from "./settings.js";
 import { TabDetailSettings } from "./tabSettings.js";
+import { MessageFilter } from "./messageFilter.js";
 
 /**
  * Init hook
@@ -69,14 +70,21 @@ Hooks.on("renderChatMessage", (message, html, data) => {
 });
 
 Hooks.on("createChatMessage", async (message) => {
-  const sourceTab = message.getFlag("multiple-chat-tabs", "sourceTab");
-  if (!sourceTab) return;
+  const allTabs = MultipleChatTabs.getTabs();
+  if (allTabs.length === 0) return;
 
-  if (sourceTab !== MultipleChatTabs.activeFilter) {
-    await MultipleChatTabs.increaseUnreadCount(sourceTab);
-    if (ui.chat && ui.chat.element) {
-      await MultipleChatTabs.refreshTabUI(ui.chat.element);
+  const targetTabIds = MessageFilter.getVisibleTabsForMessage(message, allTabs);
+
+  let needsRefresh = false;
+  for (const tabId of targetTabIds) {
+    if (tabId !== MultipleChatTabs.activeFilter) {
+      await MultipleChatTabs.increaseUnreadCount(tabId);
+      needsRefresh = true;
     }
+  }
+
+  if (needsRefresh && ui.chat && ui.chat.element) {
+    await MultipleChatTabs.refreshTabUI(ui.chat.element);
   }
 });
 
