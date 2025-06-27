@@ -1,9 +1,8 @@
 {
   "MCT": {
     "menu": {
-      "name": "タブ設定",
-      "label": "設定ウィンドウを開く",
-      "hint": "チャットメッセージを振り分けるためのタブを設定します。"
+      "name": "",
+      "label": "タブ設定"
     },
     "context": {
       "settings": "設定",
@@ -11,15 +10,14 @@
     },
     "settings": {
       "windowTitle": "チャットタブ設定",
-      "hint": "タブの追加・削除・並べ替えができます。ドラッグハンドルで順番を入れ替え、ゴミ箱アイコンで削除します。",
+      "hint": "タブの詳細設定ウィンドウ表示・追加・削除およびドラッグでの並び順変更",
       "buttons": {
         "add": "タブを追加",
-        "reset": "リセット",
-        "save": "変更を保存"
+        "reset": "リセット"
       },
       "unreadCount": {
-        "name": "未読数を表示",
-        "hint": "有効の場合、未読メッセージの数を表示します。無効の場合、代わりにシンプルなドットを表示します。"
+        "name": "未読マークに未読数を表示",
+        "hint": "ON: 未読メッセージの数を表示、 OFF: 未読マークのみ表示"
       },
       "defaults": {
         "main": "メイン",
@@ -28,10 +26,10 @@
         "newTabName": "新規タブ"
       },
       "tooltips": {
-        "edit": "詳細設定を編集",
-        "delete": "このタブを削除",
-        "reset": "すべてのタブ設定を初期状態に戻します。",
-        "defaultTab": "このタブはデフォルトのため、削除や並べ替えはできません。"
+        "edit": "タブの詳細設定",
+        "delete": "タブを削除",
+        "reset": "タブ設定を初期状態に戻す",
+        "defaultTab": "デフォルトタブの並べ替え不可"
       }
     },
     "detailSettings": {
@@ -40,22 +38,23 @@
     },
     "tabs": {
       "tooltips": {
-        "add": "新しいタブを追加"
+        "add": "新規タブを追加"
       }
     },
     "dialog": {
       "reset": {
-        "title": "設定のリセット",
-        "content": "本当にすべてのタブ設定を初期状態に戻しますか？この操作は元に戻せません。"
+        "title": "タブ設定リセット",
+        "content": "すべてのタブの設定を初期状態に戻しますか？"
       },
       "delete": {
-        "title": "タブの削除",
-        "content": "タブ「<strong>{name}</strong>」を本当に削除しますか？"
+        "title": "タブ削除",
+        "content": "「<strong>{name}</strong>」タブを削除しますか？"
       }
     },
     "notifications": {
-      "cannotDeleteDefault": "デフォルトのタブは削除できません。",
-      "cannotDragDefault": "デフォルトのタブは並べ替えできません。"
-    }
+      "cannotDeleteDefault": "デフォルトタブは削除できません。",
+      "cannotDragDefault": "デフォルトタブは並べ替えできません。"
+    },
+    "save": "保存"
   }
 }

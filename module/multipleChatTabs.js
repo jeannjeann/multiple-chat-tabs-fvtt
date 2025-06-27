@@ -44,10 +44,11 @@ export class MultipleChatTabs {
       ...tab,
       unreadCount: unreadCounts[tab.id] || 0,
     }));
+    const isGM = game.user.isGM;
 
     const tabsHtml = await renderTemplate(
       "modules/multiple-chat-tabs/templates/chat-tabs.hbs",
-      { tabs: processedTabs, showCount: showCount }
+      { tabs: processedTabs, showCount: showCount, isGM: isGM }
     );
     const tabsElement = $(tabsHtml);
     tabsElement
@@ -80,6 +81,7 @@ export class MultipleChatTabs {
     html
       .off("contextmenu", ".multiple-chat-tabs-nav .item")
       .on("contextmenu", ".multiple-chat-tabs-nav .item", (event) => {
+        if (!game.user.isGM) return;
         event.preventDefault();
         event.stopPropagation();
 
@@ -88,8 +90,12 @@ export class MultipleChatTabs {
         const tabElement = $(event.currentTarget);
         const tabId = tabElement.data("filter");
         if (!tabId) return;
-        const tab = this.getTabs().find((t) => t.id === tabId);
+
+        const allTabs = this.getTabs();
+        const tab = allTabs.find((t) => t.id === tabId);
         if (!tab) return;
+
+        const isDefaultTab = allTabs.findIndex((t) => t.id === tabId) === 0;
 
         // Menu items
         const menuItems = [];
@@ -98,7 +104,7 @@ export class MultipleChatTabs {
             "MCT.context.settings"
           )}</li>`
         );
-        if (!tab.isDefault) {
+        if (!isDefaultTab) {
           menuItems.push(
             `<li data-action="delete"><i class="fas fa-trash"></i> ${game.i18n.localize(
               "MCT.context.delete"

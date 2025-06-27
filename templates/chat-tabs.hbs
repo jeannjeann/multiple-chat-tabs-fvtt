@@ -6,15 +6,17 @@
             {{#each tabs}}
             <a class="item" data-filter="{{this.id}}">{{this.label}}{{#if this.unreadCount}}
                 {{#if ../showCount}}
-                    <span class="unread-indicator count">{{this.unreadCount}}</span>
+                <span class="unread-indicator count">{{this.unreadCount}}</span>
                 {{else}}
-                    <span class="unread-indicator dot"></span>
+                <span class="unread-indicator dot"></span>
                 {{/if}}
             {{/if}}</a>
             {{/each}}
         </nav>
     </div>
     <button class="scroll-btn right" style="display: none;"><i class="fas fa-chevron-right"></i></button>
+    {{#if isGM}}
     <button class="add-tab-btn" title="{{localize 'MCT.tabs.tooltips.add'}}"><i class="fas fa-plus"></i></button>
+    {{/if}}
 </div>
 {{/if}}

@@ -5,7 +5,6 @@ export function registerSettings() {
   game.settings.registerMenu("multiple-chat-tabs", "tab-settings", {
     name: "MCT.menu.name",
     label: "MCT.menu.label",
-    hint: "MCT.menu.hint",
     icon: "fas fa-tasks",
     type: TabSettings,
     restricted: true,

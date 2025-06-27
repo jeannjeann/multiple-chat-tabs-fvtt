@@ -1,9 +1,8 @@
 {
   "MCT": {
     "menu": {
-      "name": "Tab Configuration",
-      "label": "Open Settings",
-      "hint": "Configure the tabs used to filter chat messages."
+      "name": "",
+      "label": "Tab Config"
     },
     "context": {
       "settings": "Setting",
@@ -11,15 +10,14 @@
     },
     "settings": {
       "windowTitle": "Chat Tab Settings",
-      "hint": "You can add, delete, and reorder tabs. Drag the handle to reorder, and click the trash icon to delete.",
+      "hint": "Tab detail setting window can be displayed, added, deleted, and reordered by dragging.",
       "buttons": {
         "add": "Add Tab",
-        "reset": "Reset",
-        "save": "Save Changes"
+        "reset": "Reset"
       },
       "unreadCount": {
-        "name": "Display Unread Count",
-        "hint": "If enabled, shows the number of unread messages. If disabled, shows a simple dot instead."
+        "name": "Unread mark shows the number of unread messages",
+        "hint": "ON： show the number of unread messages.  OFF: show a simple dot only."
       },
       "defaults": {
         "main": "Main",
@@ -28,10 +26,10 @@
         "newTabName": "NewTab"
       },
       "tooltips": {
-        "edit": "Edit Details",
+        "edit": "Edit detail settings for this tab",
         "delete": "Delete this tab",
-        "reset": "Reset all tab settings to their default state.",
-        "defaultTab": "This is the default tab and cannot be deleted or reordered."
+        "reset": "Reset all tab settings",
+        "defaultTab": "The default tab cannot be reordered."
       }
     },
     "detailSettings": {
@@ -45,17 +43,18 @@
     },
     "dialog": {
       "reset": {
-        "title": "Reset Settings",
-        "content": "Are you sure you want to reset all tab settings to their default state? This cannot be undone."
+        "title": "Reset Tab Settings",
+        "content": "Do you want to reset all tab settings to their default state?"
       },
       "delete": {
         "title": "Delete Tab",
-        "content": "Are you sure you want to delete the tab '<strong>{name}</strong>'?"
+        "content": "Do you want to delete the tab '<strong>{name}</strong>'?"
       }
     },
     "notifications": {
       "cannotDeleteDefault": "The default tab cannot be deleted.",
       "cannotDragDefault": "The default tab cannot be reordered."
-    }
+    },
+    "save": "Save"
   }
 }

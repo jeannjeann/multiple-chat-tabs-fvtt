@@ -3,7 +3,7 @@
     
     <ol class="tab-list">
         {{#each tabs}}
-        <li class="tab-item" data-tab-id="{{this.id}}">
+        <li class="tab-item" data-tab-id="{{this.id}}" data-is-default="{{this.isDefault}}">
             <div class="mct-tab-row">
                 {{#if this.isDefault}}
                 <i class="fas fa-thumbtack default-tab-icon" title="{{localize 'MCT.settings.tooltips.defaultTab'}}"></i>
@@ -21,14 +21,14 @@
         </li>
         {{/each}}
     </ol>
-
+    
     <div class="form-group-stacked">
         <button type="button" class="add-tab">
             <i class="fas fa-plus"></i> {{localize "MCT.settings.buttons.add"}}
         </button>
     </div>
     <div class="form-group"> 
-        <button type="button" class="reset-settings" title="{{localize 'MCT.Settings.Reset.Hint'}}">
+        <button type="button" class="reset-settings" title="{{localize 'MCT.Settings.tooltips.reset'}}">
             <i class="fas fa-undo"></i> {{localize "MCT.settings.buttons.reset"}}
         </button>
     </div>

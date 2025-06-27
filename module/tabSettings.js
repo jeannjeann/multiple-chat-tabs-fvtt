@@ -20,7 +20,15 @@ export class TabSettings extends FormApplication {
 
   getData(options) {
     const data = super.getData(options);
-    data.tabs = MultipleChatTabs.getTabs();
+    const tabs = MultipleChatTabs.getTabs();
+    const defaultTabId =
+      tabs.find((t) => t.isDefault)?.id ||
+      (tabs.length > 0 ? tabs[0].id : null);
+
+    data.tabs = tabs.map((tab) => ({
+      ...tab,
+      isDefault: tab.id === defaultTabId,
+    }));
     return data;
   }
 
@@ -72,28 +80,40 @@ export class TabSettings extends FormApplication {
     const dropTarget = event.currentTarget;
     if (!dropTarget || dropTarget === draggedElement[0]) return;
 
+    if (dropTarget.dataset.isDefault === "true") {
+      ui.notifications.warn(
+        game.i18n.localize("MCT.notifications.cannotDragDefault")
+      );
+      return;
+    }
+
     dropTarget.before(draggedElement[0]);
 
     const newTabs = [];
     this.element.find(".tab-list .tab-item").each((index, el) => {
       const element = $(el);
-      const label = element.find(".tab-label").text();
       const tabId = element.data("tabId");
+      const tabData = MultipleChatTabs.getTabs().find((t) => t.id === tabId);
 
-      if (label && tabId) {
+      if (tabData) {
         newTabs.push({
-          id: tabId,
-          label: label,
+          ...tabData,
+          isDefault: index === 0,
         });
       }
+    });
+
+    // Clean up old isDefault flags
+    newTabs.forEach((tab, index) => {
+      if (index > 0) delete tab.isDefault;
     });
 
     await game.settings.set(
       "multiple-chat-tabs",
       "tabs",
-      JSON.stringify(newTabs),
-      { noRefresh: true }
+      JSON.stringify(newTabs)
     );
+    this.render(true); // Re-render to reflect changes immediately
   }
 
   async _onAddTab(event) {
