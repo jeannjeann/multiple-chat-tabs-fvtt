@@ -37,6 +37,7 @@ Hooks.once("ready", function () {
   $(window).on("resize", () => {
     if (ui.chat && ui.chat.element) {
       MultipleChatTabs.updateScrollButtons(ui.chat.element);
+      MultipleChatTabs._adjustScrollButtonPosition(ui.chat.element);
     }
   });
 

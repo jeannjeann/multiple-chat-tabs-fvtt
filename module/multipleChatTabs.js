@@ -58,6 +58,7 @@ export class MultipleChatTabs {
 
     this._activateTabListeners(html);
     this.applyFilter(html);
+    this._adjustScrollButtonPosition();
   }
 
   /**
@@ -340,7 +341,7 @@ export class MultipleChatTabs {
 
   /**
    * Delete tab from context menu
-   * @param {string} tabId The ID of the tab to delete.
+   * @param {string} tabId
    * @private
    */
   static _onDeleteTabRequested(tabId) {
@@ -413,7 +414,7 @@ export class MultipleChatTabs {
 
   /**
    * Filtering message
-   * @param {jQuery} messageElement The jQuery element for a single .message
+   * @param {jQuery} messageElement
    */
   static applyFilterToMessage(messageElement) {
     const allTabs = this.getTabs();
@@ -426,5 +427,33 @@ export class MultipleChatTabs {
     );
 
     messageElement.toggle(show);
+  }
+  /**
+   * Scroll to bottom button shift
+   * @param {jQuery} html
+   * @private
+   */
+  static _adjustScrollButtonPosition() {
+    // The target is the container with the .jump-to-bottom class.
+    const jumpToBottomContainer = $(".jump-to-bottom");
+    if (!jumpToBottomContainer.length) return;
+
+    // Find our tab bar inside the chat log.
+    const mctContainer = $("#chat .mct-container");
+
+    if (mctContainer.length > 0) {
+      // Get the full height of our tab bar, including its margins.
+      const tabBarHeight = mctContainer.outerHeight(true);
+
+      // Apply a RELATIVE transform. This shifts the element visually
+      // without interfering with other CSS properties like 'bottom'.
+      jumpToBottomContainer.css({
+        transform: `translateY(-${tabBarHeight}px)`,
+        transition: "transform 0.2s ease-in-out",
+      });
+    } else {
+      // If our tab bar isn't there, reset the transform.
+      jumpToBottomContainer.css("transform", "");
+    }
   }
 }
