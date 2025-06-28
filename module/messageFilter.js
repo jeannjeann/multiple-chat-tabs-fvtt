@@ -35,16 +35,24 @@ export class MessageFilter {
     if (moveTarget) {
       return new Set([moveTarget.id]);
     }
+
     const visibleTabIds = new Set();
     const defaultTabId = allTabs[0]?.id;
     let sourceTabId = message.getFlag("multiple-chat-tabs", "sourceTab");
 
     const isValidSource =
       sourceTabId && allTabs.some((tab) => tab.id === sourceTabId);
+
     if (isValidSource) {
       visibleTabIds.add(sourceTabId);
-    } else if (defaultTabId) {
-      visibleTabIds.add(defaultTabId);
+    } else {
+      const shouldFallback = game.settings.get(
+        "multiple-chat-tabs",
+        "showAlonemessageToDefaultTab"
+      );
+      if (shouldFallback && defaultTabId) {
+        visibleTabIds.add(defaultTabId);
+      }
     }
 
     const duplicateTargets = allTabs.filter(
@@ -53,6 +61,7 @@ export class MessageFilter {
     for (const target of duplicateTargets) {
       visibleTabIds.add(target.id);
     }
+
     return visibleTabIds;
   }
 

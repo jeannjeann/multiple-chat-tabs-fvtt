@@ -20,6 +20,10 @@
         "name": "Unread mark shows the number of unread messages",
         "hint": "ON： show the number of unread messages.  OFF: show a simple dot only."
       },
+      "showAlonemessageToDefaultTab": {
+        "name": "Show Orphaned Messages in Default Tab",
+        "hint": "ON; Displays messages (e.g., messages without this mnodule, deleted tab's messages) in the default tab. OFF: these messages can read in tab with Show All Messages option."
+      },
       "defaults": {
         "main": "Main",
         "roll": "Roll",
@@ -69,7 +73,7 @@
     "dialog": {
       "reset": {
         "title": "Reset Tab Settings",
-        "content": "Do you want to reset all tab settings to their default state?"
+        "content": "Do you want to reset all tab settings to their default state? (All messages will be detached from tabs and become invisible.)"
       },
       "delete": {
         "title": "Delete Tab",

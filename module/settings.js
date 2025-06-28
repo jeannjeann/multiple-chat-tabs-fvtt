@@ -24,6 +24,20 @@ export function registerSettings() {
     },
   });
 
+  game.settings.register("multiple-chat-tabs", "showAlonemessageToDefaultTab", {
+    name: "MCT.settings.showAlonemessageToDefaultTab.name",
+    hint: "MCT.settings.showAlonemessageToDefaultTab.hint",
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: false,
+    onChange: () => {
+      if (ui.chat && ui.chat.element) {
+        MultipleChatTabs.refreshTabUI(ui.chat.element);
+      }
+    },
+  });
+
   game.settings.register("multiple-chat-tabs", "tabs", {
     scope: "world",
     config: false,
