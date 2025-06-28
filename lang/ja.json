@@ -22,7 +22,7 @@
       },
       "showAlonemessageToDefaultTab": {
         "name": "孤立メッセージをデフォルトタブに表示",
-        "hint": "ON: 孤立メッセージ（このモジュールが無効な状態でのメッセージ、消去したタブのメッセージなど）をデフォルトタブに表示、OFF: 「すべてのメッセージを表示」オプションを有効にしたタブで可読"
+        "hint": "ON: 孤立メッセージ（このモジュールが無効な状態でのメッセージ、消去したタブのメッセージなど）をデフォルトタブに表示、 OFF: 「すべてのメッセージを表示」オプションを有効したタブで表示可能"
       },
       "defaults": {
         "main": "メイン",
@@ -34,7 +34,8 @@
         "edit": "タブの詳細設定",
         "delete": "タブを削除",
         "reset": "タブ設定を初期状態に戻す",
-        "defaultTab": "デフォルトタブの並べ替え不可"
+        "defaultTab": "デフォルトタブの並べ替え不可",
+        "tabIdList": "タブIDリスト"
       }
     },
     "detailSettings": {
@@ -42,7 +43,7 @@
       "label": "タブ名",
       "showAllMessages": {
         "label": "このタブにすべてのメッセージを表示",
-        "hint": "ON: 他のタブの設定を無視してこのタブにすべてのメッセージを表示する"
+        "hint": "ON: 他のタブの設定を無視してこのタブにすべてのメッセージを表示する（このモジュールが無効な状態でのメッセージ、消去したタブのメッセージなどの孤立メッセージを含む）"
       },
       "forceOOC": {
         "label": "プレイヤー発言(OOC)へ自動的に変更",
@@ -51,7 +52,8 @@
       "forceDisplayTitle": "メッセージの強制表示",
       "forceDisplayHint": "メッセージタイプ別に強制表示を設定する",
       "tooltips": {
-        "moveDisabled": "「{tabName}」タブで「このタブだけに表示」が設定されているため選択できません"
+        "moveDisabled": "「{tabName}」タブで「このタブだけに表示」が設定されているため選択できません",
+        "tabId": "タブID: {tabId}"
       }
     },
     "forceOptions": {
@@ -78,11 +80,26 @@
       "delete": {
         "title": "タブ削除",
         "content": "「<strong>{name}</strong>」タブを削除しますか？"
+      },
+      "editTabId": {
+        "title": "タブID編集",
+        "label": "タブID"
+      },
+      "allTabID": {
+        "title": "タブIDリスト",
+        "currentTab": "タブID（現在）",
+        "orphanedTab": "タブID（履歴）",
+        "orphanedTabHint": "メッセージの履歴が存在するタブID",
+        "none": "タブIDは見つかりませんでした。",
+        "noneConfigured": "タブが設定されていません。"
       }
     },
     "notifications": {
       "cannotDeleteDefault": "デフォルトタブは削除できません。",
-      "cannotDragDefault": "デフォルトタブは並べ替えできません。"
+      "cannotDragDefault": "デフォルトタブは並べ替えできません。",
+      "cannotBeEmpty": "IDを空にすることはできません。",
+      "alreadyExists": "そのIDは既に使用されています。",
+      "idCopied": "IDをクリップボードにコピーしました。"
     },
     "save": "保存"
   }

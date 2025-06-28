@@ -185,6 +185,98 @@ export class TabSettings extends FormApplication {
   async _updateObject(event, formData) {
     return;
   }
+
+  /**
+   * Show all tab ID
+   * @param {MouseEvent} event
+   * @private
+   */
+  async _onScanTabId(event) {
+    event.preventDefault();
+
+    const currentTabs = MultipleChatTabs.getTabs();
+    const allUsedIds = MultipleChatTabs.scanAllTabId();
+
+    const existingIdItems = currentTabs.map((tab) => {
+      return `<li><strong>${tab.label}</strong>: <code>${tab.id}</code></li>`;
+    });
+
+    const currentTabIds = new Set(currentTabs.map((t) => t.id));
+    const orphanedIdItems = [...allUsedIds]
+      .filter((id) => !currentTabIds.has(id))
+      .map((id) => `<li><code>${id}</code></li>`);
+
+    let content = "";
+    if (existingIdItems.length > 0) {
+      content += `<h3>${game.i18n.localize(
+        "MCT.dialog.allTabID.currentTab"
+      )}</h3><ul>${existingIdItems.join("")}</ul>`;
+    }
+
+    if (orphanedIdItems.length > 0) {
+      if (content) content += "<hr>";
+      content += `<h3>${game.i18n.localize(
+        "MCT.dialog.allTabID.orphanedTab"
+      )}</h3><p class="notes">${game.i18n.localize(
+        "MCT.dialog.allTabID.orphanedTabHint"
+      )}</p><ul>${orphanedIdItems.join("")}</ul>`;
+    }
+
+    if (!content && existingIdItems.length === 0) {
+      content = `<p>${game.i18n.localize(
+        "MCT.dialog.allTabID.noneConfigured"
+      )}</p>`;
+    }
+
+    new Dialog({
+      title: game.i18n.localize("MCT.dialog.allTabID.title"),
+      content: `<div class="mct-scan-results">${content}</div>`,
+      buttons: {
+        close: {
+          icon: '<i class="fas fa-times"></i>',
+          label: game.i18n.localize("Close"),
+        },
+      },
+      default: "close",
+      render: (html) => {
+        // copy ID to clipboard
+        html.find("code").on("click", (ev) => {
+          const target = ev.currentTarget;
+          const text = target.innerText;
+          navigator.clipboard.writeText(text).then(() => {
+            target.style.transition = "background-color 0.1s ease-in-out";
+            target.style.backgroundColor = "var(--color-bg-success)";
+            setTimeout(() => {
+              target.style.backgroundColor = "";
+            }, 300);
+          });
+          ui.notifications.info(
+            game.i18n.format("MCT.notifications.idCopied", { id: text })
+          );
+        });
+      },
+    }).render(true);
+  }
+
+  /**
+   * @override
+   */
+  async _render(force, options) {
+    await super._render(force, options);
+    const windowTitle = this.element.find(".window-title");
+    if (windowTitle.length) {
+      windowTitle.find(".mct-scan-tabid").remove();
+      const scanButton = $(
+        `<a class="mct-scan-tabid" title="${game.i18n.localize(
+          "MCT.settings.tooltips.tabIdList"
+        )}">
+           <i class="fas fa-passport"></i>
+         </a>`
+      );
+      windowTitle.append(scanButton);
+      scanButton.on("click", this._onScanTabId.bind(this));
+    }
+  }
 }
 
 // TabDetailSetting Class
@@ -287,6 +379,116 @@ export class TabDetailSettings extends FormApplication {
       "tabs",
       JSON.stringify(allTabs)
     );
+  }
+
+  /**
+   * Edit ID button handler.
+   * @param {MouseEvent} event
+   * @private
+   */
+  async _onEditTabId(event) {
+    event.preventDefault();
+
+    new Dialog({
+      title: game.i18n.localize("MCT.dialog.editTabId.title"),
+      content: `<div class="form-group"><label>${game.i18n.localize(
+        "MCT.dialog.editTabId.label"
+      )}</label><input type="text" name="newId" value="${
+        this.tabId
+      }" style="flex-basis: 70%;"></div>`,
+      buttons: {
+        ok: {
+          icon: '<i class="fas fa-check"></i>',
+          label: game.i18n.localize("OK"),
+          callback: async (html) => {
+            const newId = html.find('input[name="newId"]').val().trim();
+
+            if (!newId) {
+              return ui.notifications.warn(
+                game.i18n.localize("MCT.notifications.cannotBeEmpty")
+              );
+            }
+            if (newId === this.tabId) return; // No change
+
+            const allTabs = MultipleChatTabs.getTabs();
+            if (allTabs.some((t) => t.id === newId)) {
+              return ui.notifications.warn(
+                game.i18n.format("MCT.notifications.alreadyExists", {
+                  id: newId,
+                })
+              );
+            }
+
+            const tabIndex = allTabs.findIndex((t) => t.id === this.tabId);
+            if (tabIndex === -1) return;
+
+            allTabs[tabIndex].id = newId;
+
+            if (MultipleChatTabs.activeFilter === this.tabId) {
+              MultipleChatTabs.activeFilter = newId;
+            }
+
+            await game.settings.set(
+              "multiple-chat-tabs",
+              "tabs",
+              JSON.stringify(allTabs)
+            );
+
+            this.tabId = newId;
+            this.render(true);
+
+            const mainSettings = Object.values(ui.windows).find(
+              (w) => w.id === "multiple-chat-tabs-settings"
+            );
+            if (mainSettings) {
+              mainSettings.render(true);
+            }
+          },
+        },
+        cancel: {
+          icon: '<i class="fas fa-times"></i>',
+          label: game.i18n.localize("Cancel"),
+        },
+      },
+      default: "cancel",
+    }).render(true);
+  }
+
+  /**
+   * @override
+   */
+  activateListeners(html) {
+    super.activateListeners(html);
+    html
+      .closest(".app")
+      .find(".mct-edit-tabid")
+      .attr(
+        "title",
+        game.i18n.format("MCT.detailSettings.tooltips.tabId", {
+          tabId: this.tabId,
+        })
+      );
+  }
+
+  /**
+   * @override
+   */
+  async _render(force, options) {
+    await super._render(force, options);
+    const windowTitle = this.element.find(".window-title");
+    if (windowTitle.length) {
+      windowTitle.find(".mct-edit-tabid").remove();
+      const idButton = $(
+        `<a class="mct-edit-tabid" title="${game.i18n.format(
+          "MCT.detailSettings.tooltips.tabId",
+          { tabId: this.tabId }
+        )}">
+            <i class="fas fa-passport"></i>
+          </a>`
+      );
+      windowTitle.append(idButton);
+      idButton.on("click", this._onEditTabId.bind(this));
+    }
   }
 
   /**

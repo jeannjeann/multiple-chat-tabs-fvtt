@@ -283,3 +283,25 @@
   flex-grow: 0; 
   flex-shrink: 0;
 }
+
+.window-title .mct-edit-tabid,
+.window-title .mct-scan-tabid {
+  margin-left: 0.25rem;
+  opacity: 0.5;
+}
+
+.window-title .mct-edit-tabid:hover 
+.window-title .mct-scan-tabid:hover {
+  text-shadow: 0 0 8px var(--color-shadow-primary);
+}
+
+.mct-tabscan-results ul {
+  list-style: disc;
+  margin-left: 1.5em;
+}
+.mct-tabscan-results code {
+  cursor: copy;
+  background: rgba(0,0,0,0.1);
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+}

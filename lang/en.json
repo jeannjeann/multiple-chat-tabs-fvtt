@@ -34,7 +34,8 @@
         "edit": "Edit detail settings for this tab",
         "delete": "Delete this tab",
         "reset": "Reset all tab settings",
-        "defaultTab": "The default tab cannot be reordered."
+        "defaultTab": "The default tab cannot be reordered.",
+        "tabIdList": "Tab ID List"
       }
     },
     "detailSettings": {
@@ -42,7 +43,7 @@
       "label": "Tab Name",
       "showAllMessages": {
         "label": "Show All Messages",
-        "hint": "ON: Show all messages regardless of settings in other tabs."
+        "hint": "ON: Show all messages regardless of settings in other tabs. (Including orphaned messages, such as messages without this mnodule, deleted tab's messages.)"
       },
       "forceOOC": {
         "label": "Force Out-of-Character (OOC)",
@@ -51,7 +52,8 @@
       "forceDisplayTitle": "Force Message Display",
       "forceDisplayHint": "Force display setting by messages type",
       "tooltips": {
-        "moveDisabled": "Unavailable as 'Display in This Tab Only' is set on the '{tabName}' tab."
+        "moveDisabled": "Unavailable as 'Display in This Tab Only' is set on the '{tabName}' tab.",
+        "tabId": "Tab ID: {tabId}"
       }
     },
     "forceOptions": {
@@ -78,11 +80,26 @@
       "delete": {
         "title": "Delete Tab",
         "content": "Do you want to delete the tab '<strong>{name}</strong>'?"
+      },
+      "editTabId": {
+        "title": "Edit Tab ID",
+        "label": "Tab ID"
+      },
+      "allTabID": {
+        "title": "Tab ID List",
+        "currentTab": "Tab IDs (Current)",
+        "orphanedTab": "Tab ID (Orphaned)",
+        "orphanedTabHint": "These IDs were used in the past chat messages but are not currently in use.",
+        "none": "No used Tab IDs were found.",
+        "noneConfigured": "No tabs are configured."
       }
     },
     "notifications": {
       "cannotDeleteDefault": "The default tab cannot be deleted.",
-      "cannotDragDefault": "The default tab cannot be reordered."
+      "cannotDragDefault": "The default tab cannot be reordered.",
+      "cannotBeEmpty": "ID cannot be empty.",
+      "alreadyExists": "That ID is already in use.",
+      "idCopied": "Copied ID to clipboard."
     },
     "save": "Save"
   }

@@ -456,4 +456,20 @@ export class MultipleChatTabs {
       jumpToBottomContainer.css("transform", "");
     }
   }
+
+  /**
+   * Scans alltab ID
+   * @returns {Set<string>}
+   */
+  static scanAllTabId() {
+    const allTabId = new Set();
+
+    for (const message of game.messages) {
+      const tabId = message.getFlag("multiple-chat-tabs", "sourceTab");
+      if (tabId) {
+        allTabId.add(tabId);
+      }
+    }
+    return allTabId;
+  }
 }
