@@ -290,7 +290,7 @@
   opacity: 0.5;
 }
 
-.window-title .mct-edit-tabid:hover 
+.window-title .mct-edit-tabid:hover,
 .window-title .mct-scan-tabid:hover {
   text-shadow: 0 0 8px var(--color-shadow-primary);
 }

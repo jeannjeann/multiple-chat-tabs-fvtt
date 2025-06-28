@@ -230,7 +230,7 @@ export class TabSettings extends FormApplication {
 
     new Dialog({
       title: game.i18n.localize("MCT.dialog.allTabID.title"),
-      content: `<div class="mct-scan-results">${content}</div>`,
+      content: `<div class="mct-tabscan-results">${content}</div>`,
       buttons: {
         close: {
           icon: '<i class="fas fa-times"></i>',
