@@ -25,7 +25,17 @@ export class MultipleChatTabs {
   static async refreshTabUI(html) {
     html.find(".mct-container").remove();
 
-    const tabs = this.getTabs();
+    let tabs = this.getTabs();
+    const currentUser = game.user;
+
+    // Whisper tab filter
+    tabs = tabs.filter((tab) => {
+      if (!tab.isWhisperTab) {
+        return true;
+      }
+      return tab.whisperTargets?.includes(currentUser.id);
+    });
+
     if (tabs.length === 0) {
       html.find("#chat-log .message").show();
       if (ui.chat) ui.chat.scrollBottom();

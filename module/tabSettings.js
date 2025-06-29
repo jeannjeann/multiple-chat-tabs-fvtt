@@ -326,9 +326,7 @@ export class TabDetailSettings extends FormApplication {
     data.users = game.users.map((user) => ({
       id: user.id,
       name: user.name,
-      isTarget:
-        whisperTargetSet.has(user.id) ||
-        (user.isGM && tab.isWhisperTab && tab.whisperTargets.length === 0),
+      isTarget: whisperTargetSet.has(user.id),
     }));
 
     const defaultTabId = allTabs[0]?.id;
@@ -508,8 +506,22 @@ export class TabDetailSettings extends FormApplication {
 
     whisperCheckbox.on("change", (event) => {
       const isChecked = $(event.currentTarget).is(":checked");
+
       whisperOptions.toggleClass("mct-hidden", !isChecked);
       genericOptions.toggleClass("mct-disabled", isChecked);
+      const currentlySelectedTargets = whisperOptions.find(
+        "input[name='whisperTargets']:checked"
+      );
+
+      if (isChecked && currentlySelectedTargets.length === 0) {
+        game.users
+          .filter((u) => u.isGM)
+          .forEach((gm) => {
+            whisperOptions
+              .find(`input[value="${gm.id}"]`)
+              .prop("checked", true);
+          });
+      }
     });
 
     // Tab ID listener
