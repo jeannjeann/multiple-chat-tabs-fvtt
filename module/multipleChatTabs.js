@@ -52,6 +52,7 @@ export class MultipleChatTabs {
     const unreadCounts = this.getUnreadCounts();
     const processedTabs = tabs.map((tab) => ({
       ...tab,
+      isWhisperTab: tab.isWhisperTab ?? false,
       unreadCount: unreadCounts[tab.id] || 0,
     }));
     const isGM = game.user.isGM;

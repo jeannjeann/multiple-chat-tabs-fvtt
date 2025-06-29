@@ -4,7 +4,7 @@
     <div class="mct-scroller">
         <nav class="multiple-chat-tabs-nav tabs">
             {{#each tabs}}
-            <a class="item" data-filter="{{this.id}}">{{this.label}}{{#if this.unreadCount}}
+            <a class="item {{#if this.isWhisperTab}}multiple-chat-tabs-whisper-tab{{/if}}" data-filter="{{this.id}}">{{this.label}}{{#if this.unreadCount}}
                 {{#if ../showCount}}
                 <span class="unread-indicator count">{{this.unreadCount}}</span>
                 {{else}}

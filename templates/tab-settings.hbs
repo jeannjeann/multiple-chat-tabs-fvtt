@@ -10,7 +10,7 @@
                 {{else}}
                 <i class="fas fa-bars drag-handle"></i>
                 {{/if}}
-                <span class="tab-label">{{this.label}}</span>
+                <span class="tab-label {{#if this.isWhisperTab}}mct-whisper-tab-label{{/if}}">{{this.label}}</span>
                 <a class="edit-tab" title="{{localize 'MCT.settings.tooltips.edit'}}"><i class="fas fa-cog"></i></a>
                 {{#unless this.isDefault}}
                 <a class="delete-tab" title="{{localize 'MCT.settings.tooltips.delete'}}"><i class="fas fa-trash"></i></a>
