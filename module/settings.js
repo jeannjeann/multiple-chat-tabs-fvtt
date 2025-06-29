@@ -24,13 +24,13 @@ export function registerSettings() {
     },
   });
 
-  game.settings.register("multiple-chat-tabs", "showAlonemessageToDefaultTab", {
-    name: "MCT.settings.showAlonemessageToDefaultTab.name",
-    hint: "MCT.settings.showAlonemessageToDefaultTab.hint",
+  game.settings.register("multiple-chat-tabs", "showAloneMessageToDefaultTab", {
+    name: "MCT.settings.showAloneMessageToDefaultTab.name",
+    hint: "MCT.settings.showAloneMessageToDefaultTab.hint",
     scope: "client",
     config: true,
     type: Boolean,
-    default: false,
+    default: true,
     onChange: () => {
       if (ui.chat && ui.chat.element) {
         MultipleChatTabs.refreshTabUI(ui.chat.element);
@@ -55,6 +55,8 @@ export function registerSettings() {
           roll: "none",
           other: "none",
         },
+        isWhisperTab: false,
+        whisperTargets: [],
       },
       {
         id: `tab-${foundry.utils.randomID(16)}`,
@@ -68,6 +70,8 @@ export function registerSettings() {
           roll: "move",
           other: "none",
         },
+        isWhisperTab: false,
+        whisperTargets: [],
       },
       {
         id: `tab-${foundry.utils.randomID(16)}`,
@@ -81,6 +85,8 @@ export function registerSettings() {
           roll: "none",
           other: "none",
         },
+        isWhisperTab: false,
+        whisperTargets: [],
       },
     ]),
     onChange: () => {

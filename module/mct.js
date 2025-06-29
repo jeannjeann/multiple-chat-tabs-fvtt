@@ -76,7 +76,10 @@ Hooks.on("createChatMessage", async (message) => {
   const targetTabIds = MessageFilter.getVisibleTabsForMessage(message, allTabs);
 
   allTabs.forEach((tab) => {
-    if (tab.showAllMessages) {
+    if (
+      tab.showAllMessages &&
+      !(tab.isWhisperTab && message.whisper.length === 0)
+    ) {
       targetTabIds.add(tab.id);
     }
   });
@@ -103,8 +106,22 @@ Hooks.on("preCreateChatMessage", (message, data, options, userId) => {
   if (activeTabId) {
     const activeTab = allTabs.find((t) => t.id === activeTabId);
 
-    // Force OOC check
-    if (activeTab?.forceOOC) {
+    if (activeTab?.isWhisperTab && activeTab.whisperTargets?.length > 0) {
+      // Foece whisper check
+      const targets = activeTab.whisperTargets.filter(
+        (id) => id !== game.user.id
+      );
+      if (
+        targets.length === 0 &&
+        activeTab.whisperTargets.includes(game.user.id)
+      ) {
+        targets.push(game.user.id);
+      }
+      if (targets.length > 0) {
+        updateData.whisper = targets;
+      }
+    } else if (activeTab?.forceOOC) {
+      // Force OOC check
       updateData.style = CONST.CHAT_MESSAGE_STYLES.OOC;
       updateData.speaker = {
         scene: null,

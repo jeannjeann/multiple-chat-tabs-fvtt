@@ -27,10 +27,37 @@ export class MessageFilter {
   static getVisibleTabsForMessage(message, allTabs) {
     if (!message || allTabs.length === 0) return new Set();
 
+    if (message.whisper.length > 0) {
+      const whisperGroup = new Set(
+        [message.author?.id, ...message.whisper].filter(Boolean)
+      );
+
+      const matchingWhisperTabs = allTabs.filter((tab) => {
+        if (
+          !tab.isWhisperTab ||
+          !tab.whisperTargets ||
+          tab.whisperTargets.length === 0
+        ) {
+          return false;
+        }
+        const tabTargets = new Set(tab.whisperTargets.filter(Boolean));
+
+        return (
+          tabTargets.size === whisperGroup.size &&
+          [...whisperGroup].every((id) => tabTargets.has(id))
+        );
+      });
+      if (matchingWhisperTabs.length > 0) {
+        return new Set(matchingWhisperTabs.map((t) => t.id));
+      }
+    }
+
+    // Move and duplicate logic
     const messageType = this.getMessageType(message);
 
+    // Move logic
     const moveTarget = allTabs.find(
-      (tab) => tab.force?.[messageType] === "move"
+      (tab) => !tab.isWhisperTab && tab.force?.[messageType] === "move"
     );
     if (moveTarget) {
       return new Set([moveTarget.id]);
@@ -48,15 +75,16 @@ export class MessageFilter {
     } else {
       const shouldFallback = game.settings.get(
         "multiple-chat-tabs",
-        "showAlonemessageToDefaultTab"
+        "showAloneMessageToDefaultTab"
       );
       if (shouldFallback && defaultTabId) {
         visibleTabIds.add(defaultTabId);
       }
     }
 
+    // Duplicate logic
     const duplicateTargets = allTabs.filter(
-      (tab) => tab.force?.[messageType] === "duplicate"
+      (tab) => !tab.isWhisperTab && tab.force?.[messageType] === "duplicate"
     );
     for (const target of duplicateTargets) {
       visibleTabIds.add(target.id);
@@ -77,7 +105,10 @@ export class MessageFilter {
     if (allTabs.length === 0) return true;
 
     const activeTab = allTabs.find((t) => t.id === activeFilter);
-    if (activeTab?.showAllMessages) {
+    if (
+      activeTab?.showAllMessages &&
+      !(activeTab.isWhisperTab && message.whisper.length === 0)
+    ) {
       return true;
     }
 

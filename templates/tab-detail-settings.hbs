@@ -1,38 +1,64 @@
-<form autocomplete="off">
-    <div class="form-group">
-        <label for="label">{{localize "MCT.detailSettings.label"}}</label>
-        <input type="text" id="label" name="label" value="{{tab.label}}">
-    </div>
+<form autocomplete="off" class="flexcol">
+    <section class="content">
+        <div class="form-group">
+            <label for="label">{{localize "MCT.detailSettings.label"}}</label>
+            <input type="text" id="label" name="label" value="{{tab.label}}">
+        </div>
 
-    <hr>
+        <hr>
 
-    <div class="form-group mct-simple-row">
-        <label for="showAllMessages">{{localize "MCT.detailSettings.showAllMessages.label"}}</label>
-        <input type="checkbox" id="showAllMessages" name="showAllMessages" {{#if tab.showAllMessages}}checked{{/if}}>
-    </div>
-    <p class="notes" style="margin-top: -5px; margin-bottom: 10px;">{{localize "MCT.detailSettings.showAllMessages.hint"}}</p>
+        <div class="mct-generic-options {{#if tab.isWhisperTab}}mct-disabled{{/if}}">
+            <div class="form-group mct-simple-row">
+                <label for="showAllMessages">{{localize "MCT.detailSettings.showAllMessages.label"}}</label>
+                <input type="checkbox" id="showAllMessages" name="showAllMessages" {{#if tab.showAllMessages}}checked{{/if}}>
+            </div>
+            <p class="notes" style="margin-top: -5px; margin-bottom: 10px;">{{localize "MCT.detailSettings.showAllMessages.hint"}}</p>
 
-    <div class="form-group mct-simple-row">
-        <label for="forceOOC">{{localize "MCT.detailSettings.forceOOC.label"}}</label>
-        <input type="checkbox" id="forceOOC" name="forceOOC" {{#if tab.forceOOC}}checked{{/if}}>
-    </div>
-    <p class="notes" style="margin-top: -5px; margin-bottom: 10px;">{{localize "MCT.detailSettings.forceOOC.hint"}}</p>
+            <div class="form-group mct-simple-row">
+                <label for="forceOOC">{{localize "MCT.detailSettings.forceOOC.label"}}</label>
+                <input type="checkbox" id="forceOOC" name="forceOOC" {{#if tab.forceOOC}}checked{{/if}}>
+            </div>
+            <p class="notes" style="margin-top: -5px; margin-bottom: 10px;">{{localize "MCT.detailSettings.forceOOC.hint"}}</p>
 
-    <h4 class="form-header">{{localize "MCT.detailSettings.forceDisplayTitle"}}</h4>
-    <p class="notes">{{localize "MCT.detailSettings.forceDisplayHint"}}</p>
+            <h4 class="form-header">{{localize "MCT.detailSettings.forceDisplayTitle"}}</h4>
+            <p class="notes">{{localize "MCT.detailSettings.forceDisplayHint"}}</p>
 
-    {{#each forceSettings as |setting type|}}
-    <div class="form-group mct-simple-row">
-        <label>{{localize setting.typeLabel}}</label>
-        <select name="force.{{type}}">
-            {{#each setting.options as |opt|}}
-            <option value="{{opt.key}}" {{#if opt.selected}}selected{{/if}} {{#if opt.disabled}}disabled title="{{opt.tooltip}}"{{/if}}>
-                {{localize opt.label}}
-            </option>
+            {{#each forceSettings as |setting type|}}
+            <div class="form-group mct-simple-row">
+                <label>{{localize setting.typeLabel}}</label>
+                <select name="force.{{type}}">
+                    {{#each setting.options as |opt|}}
+                    <option value="{{opt.key}}" {{#if opt.selected}}selected{{/if}} {{#if opt.disabled}}disabled title="{{opt.tooltip}}"{{/if}}>
+                        {{localize opt.label}}
+                    </option>
+                    {{/each}}
+                </select>
+            </div>
             {{/each}}
-        </select>
-    </div>
-    {{/each}}
+        </div>
+
+        {{#unless tab.isDefault}}
+        <hr>
+        
+        <div class="form-group mct-simple-row">
+            <label for="isWhisperTab">{{localize "MCT.detailSettings.whisperTab.label"}}</label>
+            <input type="checkbox" id="isWhisperTab" name="isWhisperTab" {{#if tab.isWhisperTab}}checked{{/if}}>
+        </div>
+        <p class="notes" style="margin-top: -5px;">{{localize "MCT.detailSettings.whisperTab.hint"}}</p>
+
+        <div class="mct-whisper-options {{#unless tab.isWhisperTab}}mct-hidden{{/unless}}">
+            <h4 class="form-header">{{localize "MCT.detailSettings.whisperTab.targets"}}</h4>
+            <div class="mct-user-list">
+            {{#each users as |user|}}
+                <label class="checkbox">
+                    <input type="checkbox" name="whisperTargets" value="{{user.id}}" {{#if user.isTarget}}checked{{/if}}>
+                    <span>{{user.name}}</span>
+                </label>
+            {{/each}}
+            </div>
+        </div>
+        {{/unless}}
+    </section>
 
     <footer class="sheet-footer flexrow">
         <button type="submit" name="submit">

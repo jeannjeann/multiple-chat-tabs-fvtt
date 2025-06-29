@@ -122,12 +122,26 @@ export class TabSettings extends FormApplication {
   async _onAddTab(event) {
     event.preventDefault();
     const tabs = MultipleChatTabs.getTabs();
-    const newTabName =
+    const defaultName =
       game.i18n.localize("MCT.settings.defaults.newTabName") || "New Tab";
+
+    let newLabel = defaultName;
+    let counter = 2;
+    const existingLabels = new Set(tabs.map((t) => t.label));
+    while (existingLabels.has(newLabel)) {
+      newLabel = `${defaultName} ${counter}`;
+      counter++;
+    }
 
     const newTab = {
       id: `tab-${foundry.utils.randomID(16)}`,
-      label: newTabName,
+      label: newLabel,
+      isDefault: false,
+      showAllMessages: false,
+      forceOOC: false,
+      force: {},
+      isWhisperTab: false,
+      whisperTargets: [],
     };
 
     tabs.push(newTab);
@@ -291,8 +305,8 @@ export class TabDetailSettings extends FormApplication {
       title: game.i18n.localize("MCT.detailSettings.windowTitle"),
       id: "multiple-chat-tabs-detail-settings",
       template: "modules/multiple-chat-tabs/templates/tab-detail-settings.hbs",
-      width: 480,
-      height: "auto",
+      width: 550,
+      height: 550,
       resizable: true,
     });
   }
@@ -304,6 +318,23 @@ export class TabDetailSettings extends FormApplication {
     if (!tab) return data;
     data.tab = tab;
 
+    // Whisper Setting
+    tab.isWhisperTab = tab.isWhisperTab ?? false;
+    tab.whisperTargets = tab.whisperTargets || [];
+    const whisperTargetSet = new Set(tab.whisperTargets);
+
+    data.users = game.users.map((user) => ({
+      id: user.id,
+      name: user.name,
+      isTarget:
+        whisperTargetSet.has(user.id) ||
+        (user.isGM && tab.isWhisperTab && tab.whisperTargets.length === 0),
+    }));
+
+    const defaultTabId = allTabs[0]?.id;
+    tab.isDefault = tab.id === defaultTabId;
+
+    // Force setting
     const messageTypes = {
       ic: "IC",
       ooc: "OOC",
@@ -357,17 +388,27 @@ export class TabDetailSettings extends FormApplication {
 
     const expandedData = foundry.utils.expandObject(formData);
 
+    // Save tab setting
+    allTabs[tabIndex].label = expandedData.label;
+    allTabs[tabIndex].isWhisperTab = expandedData.isWhisperTab ?? false;
+    allTabs[tabIndex].showAllMessages = expandedData.showAllMessages ?? false;
+    allTabs[tabIndex].forceOOC = expandedData.forceOOC ?? false;
+
+    if (allTabs[tabIndex].isWhisperTab) {
+      let targets = expandedData.whisperTargets;
+      if (targets && !Array.isArray(targets)) targets = [targets];
+      allTabs[tabIndex].whisperTargets = (targets || []).filter(Boolean);
+    } else {
+      allTabs[tabIndex].whisperTargets = [];
+    }
+
+    // Save force settings
     const forceSettings = expandedData.force || {};
     for (const key in forceSettings) {
       if (forceSettings[key] === "none") {
         delete forceSettings[key];
       }
     }
-
-    allTabs[tabIndex].label = expandedData.label;
-    allTabs[tabIndex].showAllMessages = expandedData.showAllMessages ?? false;
-    allTabs[tabIndex].forceOOC = expandedData.forceOOC ?? false;
-
     if (Object.keys(forceSettings).length > 0) {
       allTabs[tabIndex].force = forceSettings;
     } else {
@@ -459,6 +500,19 @@ export class TabDetailSettings extends FormApplication {
    */
   activateListeners(html) {
     super.activateListeners(html);
+
+    // Whisper listener
+    const whisperCheckbox = html.find("#isWhisperTab");
+    const whisperOptions = html.find(".mct-whisper-options");
+    const genericOptions = html.find(".mct-generic-options");
+
+    whisperCheckbox.on("change", (event) => {
+      const isChecked = $(event.currentTarget).is(":checked");
+      whisperOptions.toggleClass("mct-hidden", !isChecked);
+      genericOptions.toggleClass("mct-disabled", isChecked);
+    });
+
+    // Tab ID listener
     html
       .closest(".app")
       .find(".mct-edit-tabid")

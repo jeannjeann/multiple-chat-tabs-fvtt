@@ -59,6 +59,7 @@ export class MultipleChatTabs {
     this._activateTabListeners(html);
     this.applyFilter(html);
     this._adjustScrollButtonPosition();
+    this._scrollActiveTab(html);
   }
 
   /**
@@ -269,18 +270,26 @@ export class MultipleChatTabs {
    */
   static async _onTabClick(event) {
     event.preventDefault();
-    const clickedFilter = event.currentTarget.dataset.filter;
+    const appElement = $(event.currentTarget).closest(".app");
+    const clickedTab = $(event.currentTarget);
+    const clickedFilter = clickedTab.data("filter");
 
     if (MultipleChatTabs.activeFilter === clickedFilter) return;
+
+    appElement
+      .find(".multiple-chat-tabs-nav .item.active")
+      .removeClass("active");
+    clickedTab.addClass("active");
 
     MultipleChatTabs.activeFilter = clickedFilter;
 
     if (this.getUnreadCounts()[clickedFilter]) {
       await this.resetUnreadCount(clickedFilter);
+      clickedTab.find(".unread-indicator").remove();
     }
 
-    const appElement = $(event.currentTarget).closest(".app");
-    await this.refreshTabUI(appElement);
+    this.applyFilter(appElement);
+    this._scrollActiveTab(appElement);
   }
 
   /**
@@ -299,6 +308,58 @@ export class MultipleChatTabs {
     html
       .find(".scroll-btn.right")
       .toggle(scrollWidth - clientWidth - scrollLeft > 1);
+  }
+
+  /**
+   * Ajust active tab position
+   * @param {jQuery} [scope]
+   * @private
+   */
+  static _scrollActiveTab(scope) {
+    const container = scope || ui.chat.element;
+    if (!container) return;
+
+    const scrollerEl = container.find(".mct-scroller")[0];
+    const activeTabEl = container.find(
+      ".multiple-chat-tabs-nav .item.active"
+    )[0];
+    if (!scrollerEl || !activeTabEl) return;
+
+    const scrollerRect = scrollerEl.getBoundingClientRect();
+    const activeTabRect = activeTabEl.getBoundingClientRect();
+    const leftButtonWidth =
+      container.find(".scroll-btn.left:visible").outerWidth(true) || 0;
+    const rightButtonWidth =
+      container.find(".scroll-btn.right:visible").outerWidth(true) || 0;
+    const visibleAreaStart = scrollerRect.left + leftButtonWidth;
+    const visibleAreaEnd = scrollerRect.right - rightButtonWidth;
+
+    let targetScrollLeft;
+
+    if (activeTabRect.width > visibleAreaEnd - visibleAreaStart) {
+      const shiftAmount = activeTabRect.left - visibleAreaStart;
+      targetScrollLeft = scrollerEl.scrollLeft + shiftAmount - 5;
+    }
+    if (targetScrollLeft === undefined) {
+      if (activeTabRect.right > visibleAreaEnd) {
+        const overflowAmount = activeTabRect.right - visibleAreaEnd;
+        targetScrollLeft = scrollerEl.scrollLeft + overflowAmount + 5;
+      }
+      if (activeTabRect.left < visibleAreaStart) {
+        const underflowAmount = visibleAreaStart - activeTabRect.left;
+        targetScrollLeft = scrollerEl.scrollLeft - underflowAmount - 5;
+      }
+    }
+
+    if (targetScrollLeft !== undefined) {
+      const maxScrollLeft = scrollerEl.scrollWidth - scrollerEl.clientWidth;
+      const finalScrollLeft = Math.max(
+        0,
+        Math.min(targetScrollLeft, maxScrollLeft)
+      );
+
+      scrollerEl.scrollLeft = finalScrollLeft;
+    }
   }
 
   /**
@@ -324,10 +385,16 @@ export class MultipleChatTabs {
     const newTab = {
       id: `tab-${foundry.utils.randomID(16)}`,
       label: newLabel,
+      isDefault: false,
+      showAllMessages: false,
+      forceOOC: false,
+      force: {},
+      isWhisperTab: false,
+      whisperTargets: [],
     };
 
     tabs.push(newTab);
-    this.activeFilter = newTab.id;
+
     await game.settings.set("multiple-chat-tabs", "tabs", JSON.stringify(tabs));
 
     // Refresh the TabSetting Window
@@ -358,7 +425,7 @@ export class MultipleChatTabs {
     }
 
     const dialog = new Dialog({
-      title: game.i18n.localize("MCT.dialog.delete.title"),
+      title: game.i18n.format("MCT.dialog.delete.title", { tabId: tabId }),
       content: game.i18n.format("MCT.dialog.delete.content", {
         name: tabData.label,
       }),
@@ -434,25 +501,19 @@ export class MultipleChatTabs {
    * @private
    */
   static _adjustScrollButtonPosition() {
-    // The target is the container with the .jump-to-bottom class.
     const jumpToBottomContainer = $(".jump-to-bottom");
     if (!jumpToBottomContainer.length) return;
 
-    // Find our tab bar inside the chat log.
     const mctContainer = $("#chat .mct-container");
 
     if (mctContainer.length > 0) {
-      // Get the full height of our tab bar, including its margins.
       const tabBarHeight = mctContainer.outerHeight(true);
 
-      // Apply a RELATIVE transform. This shifts the element visually
-      // without interfering with other CSS properties like 'bottom'.
       jumpToBottomContainer.css({
         transform: `translateY(-${tabBarHeight}px)`,
         transition: "transform 0.2s ease-in-out",
       });
     } else {
-      // If our tab bar isn't there, reset the transform.
       jumpToBottomContainer.css("transform", "");
     }
   }
