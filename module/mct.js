@@ -119,16 +119,25 @@ Hooks.on("preCreateChatMessage", (message, data, options, userId) => {
       }
       if (targets.length > 0) {
         updateData.whisper = targets;
+        updateData.style = CONST.CHAT_MESSAGE_STYLES.OTHER;
+        updateData.speaker = {
+          scene: null,
+          actor: null,
+          token: null,
+          alias: undefined,
+        };
       }
     } else if (activeTab?.forceOOC) {
       // Force OOC check
-      updateData.style = CONST.CHAT_MESSAGE_STYLES.OOC;
-      updateData.speaker = {
-        scene: null,
-        actor: null,
-        token: null,
-        alias: undefined,
-      };
+      if (message.style === CONST.CHAT_MESSAGE_STYLES.IC) {
+        updateData.style = CONST.CHAT_MESSAGE_STYLES.OOC;
+        updateData.speaker = {
+          scene: null,
+          actor: null,
+          token: null,
+          alias: undefined,
+        };
+      }
     }
   }
   message.updateSource(updateData);
