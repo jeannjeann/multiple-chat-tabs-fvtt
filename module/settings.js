@@ -10,11 +10,22 @@ export function registerSettings() {
     restricted: true,
   });
 
-  game.settings.register("multiple-chat-tabs", "display-unread-count", {
-    name: "MCT.settings.unreadCount.name",
-    hint: "MCT.settings.unreadCount.hint",
-    scope: "client",
+  game.settings.register("multiple-chat-tabs", "autoWhisperTab", {
+    name: "MCT.settings.autoWhisperTab.name",
+    hint: "MCT.settings.autoWhisperTab.hint",
+    scope: "world",
     config: true,
+    restricted: true,
+    type: Boolean,
+    default: true,
+  });
+
+  game.settings.register("multiple-chat-tabs", "showAloneMessageToDefaultTab", {
+    name: "MCT.settings.showAloneMessageToDefaultTab.name",
+    hint: "MCT.settings.showAloneMessageToDefaultTab.hint",
+    scope: "world",
+    config: true,
+    restricted: true,
     type: Boolean,
     default: false,
     onChange: () => {
@@ -24,13 +35,13 @@ export function registerSettings() {
     },
   });
 
-  game.settings.register("multiple-chat-tabs", "showAloneMessageToDefaultTab", {
-    name: "MCT.settings.showAloneMessageToDefaultTab.name",
-    hint: "MCT.settings.showAloneMessageToDefaultTab.hint",
+  game.settings.register("multiple-chat-tabs", "display-unread-count", {
+    name: "MCT.settings.unreadCount.name",
+    hint: "MCT.settings.unreadCount.hint",
     scope: "client",
     config: true,
     type: Boolean,
-    default: true,
+    default: false,
     onChange: () => {
       if (ui.chat && ui.chat.element) {
         MultipleChatTabs.refreshTabUI(ui.chat.element);

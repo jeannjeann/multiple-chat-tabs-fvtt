@@ -20,17 +20,6 @@
   "styles": [
     "css/mct.css"
   ],
-  "templates": [
-    {
-      "path": "templates/chat-tabs.hbs"
-    },
-    {
-      "path": "templates/tab-settings.hbs"
-    },
-    {
-      "path": "templates/tab-detail-settings.hbs"
-    }
-  ],
   "languages": [
     {
       "lang": "en",

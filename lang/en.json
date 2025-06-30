@@ -16,13 +16,17 @@
         "add": "Add Tab",
         "reset": "Reset"
       },
-      "unreadCount": {
-        "name": "Unread mark shows the number of unread messages",
-        "hint": "ON： show the number of unread messages.  OFF: show a simple dot only."
+      "autoWhisperTab": {
+        "name": "Auto-Create Whisper Tabs",
+        "hint": "ON: Automatically creates a new whisper tab when no match is found."
       },
       "showAloneMessageToDefaultTab": {
         "name": "Show Orphaned Messages in Default Tab",
         "hint": "ON; Displays messages (e.g., messages without this mnodule, deleted tab's messages) in the default tab. OFF: these messages can read in tab with Show All Messages option."
+      },
+      "unreadCount": {
+        "name": "Unread mark shows the number of unread messages",
+        "hint": "ON： show the number of unread messages.  OFF: show a simple dot only. (This setting is per client.)"
       },
       "defaults": {
         "main": "Main",
@@ -53,7 +57,7 @@
       "forceDisplayHint": "Force display setting by messages type",
       "whisperTab": {
         "label": "Whisper Tab",
-        "hint": "ON: Make this a dedicated tab for whisper. Need to set 'Whisper Targets'. This tab is not displayed for non-eligible players. Other settings will be disabled.",
+        "hint": "ON: Make this a dedicated tab for whisper. Messages will be displayed in this tab. Other settings will be disabled.",
         "targets": "Whisper Targets"
       },
       "tooltips": {

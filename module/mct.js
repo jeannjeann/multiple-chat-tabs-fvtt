@@ -7,14 +7,6 @@ import { MessageFilter } from "./messageFilter.js";
  * Init hook
  */
 Hooks.once("init", async function () {
-  // Load templates early.
-  const templatePaths = [
-    "modules/multiple-chat-tabs/templates/chat-tabs.hbs",
-    "modules/multiple-chat-tabs/templates/tab-settings.hbs",
-    "modules/multiple-chat-tabs/templates/tab-detail-settings.hbs",
-  ];
-  await loadTemplates(templatePaths);
-
   // Open detail from context menu
   Hooks.on("mct:requestTabEdit", (tabId) => {
     if (tabId) {
@@ -71,11 +63,73 @@ Hooks.on("renderChatMessage", (message, html, data) => {
 });
 
 Hooks.on("createChatMessage", async (message) => {
-  const allTabs = MultipleChatTabs.getTabs();
-  if (allTabs.length === 0) return;
-  const targetTabIds = MessageFilter.getVisibleTabsForMessage(message, allTabs);
+  // Whisper tab check
+  const autoWhisper = game.settings.get("multiple-chat-tabs", "autoWhisperTab");
+  if (autoWhisper && message.whisper.length > 0 && game.user.isGM) {
+    const allTabs = MultipleChatTabs.getTabs();
+    const whisperGroup = new Set(
+      [message.author?.id, ...message.whisper].filter(Boolean)
+    );
 
-  allTabs.forEach((tab) => {
+    const matchTab = allTabs.some((tab) => {
+      if (!tab.isWhisperTab || !tab.whisperTargets) return false;
+      const tabTargets = new Set(tab.whisperTargets.filter(Boolean));
+      return (
+        tabTargets.size === whisperGroup.size &&
+        [...whisperGroup].every((id) => tabTargets.has(id))
+      );
+    });
+
+    if (!matchTab) {
+      const whisperMember = [...whisperGroup];
+      let newLabel = "";
+      const isAllGMs = whisperMember.every((id) => game.users.get(id)?.isGM);
+      const playerMember = whisperMember.filter(
+        (id) => !game.users.get(id)?.isGM
+      );
+
+      if (isAllGMs) {
+        if (whisperMember.length === 1) {
+          newLabel = game.users.get(whisperMember[0])?.name || "GM";
+        } else {
+          newLabel = "GMs";
+        }
+      } else {
+        const memberName = playerMember
+          .map((id) => game.users.get(id)?.name || "Unknown")
+          .sort();
+        newLabel = memberName.join(" & ");
+      }
+
+      const newTab = {
+        id: `tab-${foundry.utils.randomID(16)}`,
+        label: newLabel,
+        isDefault: false,
+        showAllMessages: false,
+        forceOOC: false,
+        force: {},
+        isWhisperTab: true,
+        whisperTargets: whisperMember,
+      };
+
+      const newTabs = [...allTabs, newTab];
+      await game.settings.set(
+        "multiple-chat-tabs",
+        "tabs",
+        JSON.stringify(newTabs)
+      );
+    }
+  }
+
+  // All show, whisper, unread check
+  const currentTabs = MultipleChatTabs.getTabs();
+  if (currentTabs.length === 0) return;
+  const targetTabIds = MessageFilter.getVisibleTabsForMessage(
+    message,
+    currentTabs
+  );
+
+  currentTabs.forEach((tab) => {
     if (
       tab.showAllMessages &&
       !(tab.isWhisperTab && message.whisper.length === 0)
