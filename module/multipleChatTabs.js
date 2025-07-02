@@ -17,6 +17,8 @@ export class MultipleChatTabs {
   }
 
   static activeFilter = null;
+  static oldestMessage = {};
+  static oldestLoadMessage = {}; // { [windowId]: { [tabId]: messageId } }
 
   /**
    * Refresh tab UI
@@ -45,6 +47,21 @@ export class MultipleChatTabs {
       this.activeFilter = tabs[0]?.id || null;
     }
 
+    // Initialize default tab's property
+    const initialActiveTabId = this.activeFilter;
+    if (initialActiveTabId) {
+      const windowId = html.attr("id");
+      if (!this.oldestMessage[initialActiveTabId]) {
+        this.oldestMessage[initialActiveTabId] =
+          this.getOldestMessage(initialActiveTabId);
+      }
+      if (!this.oldestLoadMessage[windowId])
+        this.oldestLoadMessage[windowId] = {};
+      this.oldestLoadMessage[windowId][initialActiveTabId] =
+        this.getOldestLoadMessage(initialActiveTabId, html);
+    }
+
+    // Initialize unread count
     const showCount = game.settings.get(
       "multiple-chat-tabs",
       "display-unread-count"
@@ -67,6 +84,7 @@ export class MultipleChatTabs {
       .addClass("active");
     html.find("#chat-log").after(tabsElement);
 
+    // Activate listener
     this._activateTabListeners(html);
     this.applyFilter(html);
     this._adjustScrollButtonPosition();
@@ -241,6 +259,14 @@ export class MultipleChatTabs {
         $(window).one("click", closeMenu);
         $(window).one("contextmenu", closeMenu);
       });
+
+    // Message load button listener
+    html
+      .off("click", ".mct-load-more-container a")
+      .on("click", ".mct-load-more-container a", (event) => {
+        event.preventDefault();
+        this.loadMessage({ scope: html });
+      });
   }
 
   /**
@@ -276,7 +302,7 @@ export class MultipleChatTabs {
   }
 
   /**
-   * Click event handler
+   * Tab click event handler
    * @param {Event} event
    */
   static async _onTabClick(event) {
@@ -286,6 +312,17 @@ export class MultipleChatTabs {
     const clickedFilter = clickedTab.data("filter");
 
     if (MultipleChatTabs.activeFilter === clickedFilter) return;
+
+    // Update oldestMessage and oldestLoadMessage
+    const windowId = appElement.attr("id");
+    if (!this.oldestMessage[clickedFilter]) {
+      this.oldestMessage[clickedFilter] = this.getOldestMessage(clickedFilter);
+    }
+    if (!this.oldestLoadMessage[windowId]) {
+      this.oldestLoadMessage[windowId] = {};
+      this.oldestLoadMessage[windowId][clickedFilter] =
+        this.getOldestLoadMessage(clickedFilter, appElement);
+    }
 
     appElement
       .find(".multiple-chat-tabs-nav .item.active")
@@ -527,6 +564,98 @@ export class MultipleChatTabs {
     } else {
       jumpToBottomContainer.css("transform", "");
     }
+  }
+
+  /**
+   * Get Oldest Message ID
+   * @param {string} tabId
+   * @returns {string|null}
+   */
+  static getOldestMessage(tabId) {
+    if (!tabId) return null;
+    const allTabs = this.getTabs();
+    if (allTabs.length === 0) return null;
+
+    const sortedMessages = [...game.messages].sort(
+      (a, b) => a.timestamp - b.timestamp
+    );
+    for (const message of sortedMessages) {
+      if (MessageFilter.filterMessage(message, allTabs, tabId)) {
+        return message.id;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Get Oldest Load Message ID
+   * @param {string} tabId
+   * @param {jQuery} [scope=ui.chat.element]
+   * @returns {string|null}
+   */
+  static getOldestLoadMessage(tabId, scope) {
+    if (!tabId) return null;
+    const targetElement = scope || ui.chat.element;
+    const chatLog = targetElement.find("#chat-log");
+    if (!chatLog || !chatLog.length) return null;
+    const allTabs = this.getTabs();
+    if (allTabs.length === 0) return null;
+
+    const messageElements = chatLog.find(".message");
+    for (let i = 0; i < messageElements.length; i++) {
+      const el = messageElements[i];
+      const messageId = $(el).data("messageId");
+      const message = game.messages.get(messageId);
+
+      if (message && MessageFilter.filterMessage(message, allTabs, tabId)) {
+        return message.id;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Load past message
+   * @param {object} [options]
+   * @param {number} [options.batchSize]
+   * @param {jQuery} [options.scope=null]
+   */
+  static async loadMessage({ scope = null } = {}) {
+    const chat = scope
+      ? Object.values(ui.windows).find((w) => w.element[0] === scope[0]) ??
+        ui.chat
+      : ui.chat;
+    if (!chat) return;
+
+    const batchSize = game.settings.get(
+      "multiple-chat-tabs",
+      "load-batch-size"
+    );
+    await chat._renderBatch(chat.element, batchSize);
+
+    this.applyFilter(chat.element);
+  }
+
+  /**
+   * Message overflow check
+   * @param {jQuery} [scope=ui.chat.element]
+   * @returns {boolean}
+   */
+  static isOverflow(scope) {
+    const targetElement = scope || ui.chat.element;
+    const chatLog = targetElement.find("#chat-log");
+    if (!chatLog || !chatLog.length) {
+      return false;
+    }
+
+    const containerHeight = chatLog[0].clientHeight;
+
+    let totalMessagesHeight = 0;
+    chatLog.find(".message:visible").each((index, element) => {
+      totalMessagesHeight += element.offsetHeight;
+    });
+
+    return totalMessagesHeight > containerHeight;
   }
 
   /**

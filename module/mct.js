@@ -55,6 +55,44 @@ Hooks.once("ready", function () {
 });
 
 Hooks.on("renderChatLog", async (app, html, data) => {
+  const chatLog = html.find("#chat-log");
+  // Chat scroll listener
+  if (chatLog.length) {
+    const SCROLL_THRESHOLD_PERCENT = 0.05;
+
+    const throttledScrollHandler = foundry.utils.throttle(() => {
+      const scrollThresholdPx =
+        chatLog[0].clientHeight * SCROLL_THRESHOLD_PERCENT;
+
+      if (
+        MultipleChatTabs.isOverflow(html) &&
+        chatLog.scrollTop() <= scrollThresholdPx
+      ) {
+        console.log(
+          `[MCT-Debug] Scrolled near the top (within ${Math.round(
+            scrollThresholdPx
+          )}px)!`
+        );
+      }
+    }, 200);
+
+    chatLog.on("scroll", throttledScrollHandler);
+  }
+
+  // Message load button
+  html.find(".mct-load-more-container").remove();
+
+  if (chatLog.length) {
+    const loadButtonHtml = `
+        <div class="mct-load-more-container" title="${game.i18n.localize(
+          "MCT.tooltips.loadButton"
+        )}">
+          <a><i class="fas fa-chevron-up"></i></a>
+        </div>
+      `;
+    chatLog.before(loadButtonHtml);
+  }
+
   await MultipleChatTabs.refreshTabUI(html);
 });
 
@@ -138,6 +176,30 @@ Hooks.on("createChatMessage", async (message) => {
     }
   });
 
+  // Set first oldestMessage
+  for (const tabId of targetTabIds) {
+    if (!MultipleChatTabs.oldestMessage[tabId]) {
+      MultipleChatTabs.oldestMessage[tabId] = message.id;
+    }
+
+    // Set firest oldestLoadMessage
+    const windowScopes = [
+      ui.chat.element,
+      ...Object.values(ui.windows)
+        .filter((w) => w.id.startsWith("chat-popout"))
+        .map((w) => w.element),
+    ];
+    for (const scope of windowScopes) {
+      const windowId = scope.attr("id");
+      if (!MultipleChatTabs.oldestLoadMessage[windowId])
+        MultipleChatTabs.oldestLoadMessage[windowId] = {};
+      if (!MultipleChatTabs.oldestLoadMessage[windowId][tabId]) {
+        MultipleChatTabs.oldestLoadMessage[windowId][tabId] = message.id;
+      }
+    }
+  }
+
+  // Refresh unread count
   let needsRefresh = false;
   for (const tabId of targetTabIds) {
     if (tabId !== MultipleChatTabs.activeFilter) {

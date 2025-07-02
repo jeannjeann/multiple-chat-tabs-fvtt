@@ -26,7 +26,15 @@
       },
       "unreadCount": {
         "name": "Unread mark shows the number of unread messages",
-        "hint": "ON： show the number of unread messages.  OFF: show a simple dot only. (This setting is per client.)"
+        "hint": "ON： show the number of unread messages.  OFF: show a simple dot only. (Per client setting)"
+      },
+      "autoLoad": {
+        "name": "Auto-Load Past Messages",
+        "hint": "Automatically loads past messages (Core Autoload cannot be deactivated, Disabling it is recommended if performance problems occur, Per client setting)."
+      },
+      "loadBatchSize": {
+        "name": "Message Load Size",
+        "hint": "The number of past messages to load at once (Per client setting)."
       },
       "defaults": {
         "main": "Main",
@@ -80,6 +88,9 @@
       "tooltips": {
         "add": "Add New Tab"
       }
+    },
+    "tooltips": {
+      "loadButton": "Load messages"
     },
     "dialog": {
       "reset": {

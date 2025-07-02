@@ -49,6 +49,30 @@ export function registerSettings() {
     },
   });
 
+  game.settings.register("multiple-chat-tabs", "auto-load-messages", {
+    name: "MCT.settings.autoLoad.name",
+    hint: "MCT.settings.autoLoad.hint",
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: true,
+    requiresReload: true,
+  });
+
+  game.settings.register("multiple-chat-tabs", "load-batch-size", {
+    name: "MCT.settings.loadBatchSize.name",
+    hint: "MCT.settings.loadBatchSize.hint",
+    scope: "client",
+    config: true,
+    type: Number,
+    range: {
+      min: 10,
+      max: 500,
+      step: 10,
+    },
+    default: 100,
+  });
+
   game.settings.register("multiple-chat-tabs", "tabs", {
     scope: "world",
     config: false,

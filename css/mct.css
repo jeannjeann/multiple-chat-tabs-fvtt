@@ -358,3 +358,33 @@ color: #bbffff !important;
   position: static;
   margin: 0; 
 }
+
+.mct-load-more-container {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.mct-load-more-container a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+  border: 1px solid var(--color-border-light-primary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.mct-load-more-container a:hover {
+  background: rgba(0, 0, 0, 0.8);
+  color: var(--color-border-highlight);
+  text-shadow: 0 0 8px var(--color-shadow-primary);
+}
