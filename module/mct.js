@@ -56,27 +56,33 @@ Hooks.once("ready", function () {
 
 Hooks.on("renderChatLog", async (app, html, data) => {
   const chatLog = html.find("#chat-log");
-  // Chat scroll listener
   if (chatLog.length) {
+    // Chat scroll listener
     const SCROLL_THRESHOLD_PERCENT = 0.05;
-
     const throttledScrollHandler = foundry.utils.throttle(() => {
       const scrollThresholdPx =
         chatLog[0].clientHeight * SCROLL_THRESHOLD_PERCENT;
-
       if (
         MultipleChatTabs.isOverflow(html) &&
         chatLog.scrollTop() <= scrollThresholdPx
       ) {
-        console.log(
-          `[MCT-Debug] Scrolled near the top (within ${Math.round(
-            scrollThresholdPx
-          )}px)!`
-        );
+        MultipleChatTabs._onScrollToTop(scrollThresholdPx);
       }
     }, 200);
-
     chatLog.on("scroll", throttledScrollHandler);
+
+    // Load message listener
+    const debouncedMutationHandler = foundry.utils.debounce(
+      MultipleChatTabs._updateLoaedMessage,
+      100
+    );
+    const observer = new MutationObserver(debouncedMutationHandler);
+    observer.observe(chatLog[0], {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      characterData: true,
+    });
   }
 
   // Message load button

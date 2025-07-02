@@ -659,6 +659,25 @@ export class MultipleChatTabs {
   }
 
   /**
+   * Check scroll position
+   * @param {number} thresholdPx
+   * @private
+   */
+  static _onScrollToTop(thresholdPx) {
+    console.log(
+      `[MCT-Debug] Scrolled near the top (within ${Math.round(thresholdPx)}px)!`
+    );
+  }
+
+  /**
+   * check load message
+   * @private
+   */
+  static _updateLoaedMessage() {
+    console.log(`[MCT-Debug] Chat log DOM changed.`);
+  }
+
+  /**
    * Scans alltab ID
    * @returns {Set<string>}
    */
