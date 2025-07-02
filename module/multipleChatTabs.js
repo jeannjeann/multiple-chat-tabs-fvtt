@@ -512,8 +512,10 @@ export class MultipleChatTabs {
   /**
    * Separate message
    * @param {jQuery} [scope]
+   * @param {object} [options={}]
+   * @param {boolean} [options.scroll=true]
    */
-  static applyFilter(scope) {
+  static applyFilter(scope, { scroll = true } = {}) {
     const chatLog = scope ? scope.find("#chat-log") : $("#chat-log");
     if (!chatLog.length) return;
 
@@ -522,7 +524,7 @@ export class MultipleChatTabs {
       this.applyFilterToMessage($(el));
     });
 
-    if (ui.chat) {
+    if (scroll && ui.chat) {
       ui.chat.scrollBottom();
     }
   }
@@ -627,13 +629,27 @@ export class MultipleChatTabs {
       : ui.chat;
     if (!chat) return;
 
+    const chatLog = chat.element.find("#chat-log");
+    if (!chatLog.length) return;
+
+    const oldScrollHeight = chatLog[0].scrollHeight;
+    const oldScrollTop = chatLog.scrollTop();
+
     const batchSize = game.settings.get(
       "multiple-chat-tabs",
       "load-batch-size"
     );
     await chat._renderBatch(chat.element, batchSize);
 
-    this.applyFilter(chat.element);
+    this.applyFilter(chat.element, { scroll: false });
+
+    setTimeout(() => {
+      const newScrollHeight = chatLog[0].scrollHeight;
+      const heightDifference = newScrollHeight - oldScrollHeight;
+      const newScrollTop = oldScrollTop + heightDifference;
+
+      chatLog.scrollTop(Math.max(0, newScrollTop));
+    }, 50);
   }
 
   /**
