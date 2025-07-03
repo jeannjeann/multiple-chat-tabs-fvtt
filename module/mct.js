@@ -189,21 +189,24 @@ Hooks.on("createChatMessage", async (message) => {
         tabId,
         { newMessage: message, isFirst: true }
       );
-    }
 
-    // Set firest oldestLoadMessage
-    const windowScopes = [
-      ui.chat.element,
-      ...Object.values(ui.windows)
-        .filter((w) => w.id.startsWith("chat-popout"))
-        .map((w) => w.element),
-    ];
-    for (const scope of windowScopes) {
-      const windowId = scope.attr("id");
-      if (!MultipleChatTabs.oldestLoadMessage[windowId])
-        MultipleChatTabs.oldestLoadMessage[windowId] = {};
-      if (!MultipleChatTabs.oldestLoadMessage[windowId][tabId]) {
-        MultipleChatTabs.oldestLoadMessage[windowId][tabId] = message.id;
+      // Set first  oldestLoadMessage
+      const windowScopes = [
+        ui.chat.element,
+        ...Object.values(ui.windows)
+          .filter((w) => w.id.startsWith("chat-popout"))
+          .map((w) => w.element),
+      ];
+      for (const scope of windowScopes) {
+        if (!scope) continue;
+        const windowId = scope.attr("id");
+        if (!MultipleChatTabs.oldestLoadMessage[windowId]) {
+          MultipleChatTabs.oldestLoadMessage[windowId] = {};
+        }
+        MultipleChatTabs.oldestLoadMessage[windowId][tabId] =
+          MultipleChatTabs.getOldestLoadMessage(tabId, scope, {
+            isFirst: true,
+          });
       }
     }
   }

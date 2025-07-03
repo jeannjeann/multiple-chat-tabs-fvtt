@@ -313,31 +313,47 @@ export class MultipleChatTabs {
 
     if (MultipleChatTabs.activeFilter === clickedFilter) return;
 
-    // Update oldestMessage and oldestLoadMessage
+    appElement
+      .find(".multiple-chat-tabs-nav .item.active")
+      .removeClass("active");
+    clickedTab.addClass("active");
+    MultipleChatTabs.activeFilter = clickedFilter;
+
+    this.applyFilter(appElement);
+    this._scrollActiveTab(appElement);
+
+    // Update oldestMessage
     const windowId = appElement.attr("id");
     if (!this.oldestMessage[clickedFilter]) {
       this.oldestMessage[clickedFilter] = this.getOldestMessage(clickedFilter);
     }
     if (!this.oldestLoadMessage[windowId]) {
       this.oldestLoadMessage[windowId] = {};
-      this.oldestLoadMessage[windowId][clickedFilter] =
-        this.getOldestLoadMessage(clickedFilter, appElement);
     }
 
-    appElement
-      .find(".multiple-chat-tabs-nav .item.active")
-      .removeClass("active");
-    clickedTab.addClass("active");
+    // Update oldestLoadMessage
+    this.oldestLoadMessage[windowId][clickedFilter] = this.getOldestLoadMessage(
+      clickedFilter,
+      appElement
+    );
 
-    MultipleChatTabs.activeFilter = clickedFilter;
-
+    // Reset unread count
     if (this.getUnreadCounts()[clickedFilter]) {
       await this.resetUnreadCount(clickedFilter);
       clickedTab.find(".unread-indicator").remove();
     }
 
-    this.applyFilter(appElement);
-    this._scrollActiveTab(appElement);
+    // Debug===================================================
+    const tabLabel = clickedTab.text().replace(/\s*\d+\s*$/, "");
+    console.log(`[MCT-Debug] Tab clicked: "${tabLabel}"`, {
+      "Tab ID": clickedFilter,
+      "Window ID": windowId,
+      "Oldest Message ID (World)":
+        this.oldestMessage[clickedFilter] || "Not set",
+      "Oldest Loaded Message ID (DOM)":
+        this.oldestLoadMessage[windowId]?.[clickedFilter] || "Not set",
+    });
+    // Debug===================================================
   }
 
   /**
@@ -584,8 +600,8 @@ export class MultipleChatTabs {
     // Check first message
     if (newMessage && isFirst) {
       if (MessageFilter.filterMessage(newMessage, allTabs, tabId)) {
-        const tab = allTabs.find((t) => t.id === tabId);
         // Debug===================================================
+        const tab = allTabs.find((t) => t.id === tabId);
         console.log(
           `[MCT-Debug] getOldestMessage found for Tab (Optimized: First message for this tab):`,
           {
@@ -607,8 +623,8 @@ export class MultipleChatTabs {
     );
     for (const message of sortedMessages) {
       if (MessageFilter.filterMessage(message, allTabs, tabId)) {
-        const tab = allTabs.find((t) => t.id === tabId);
         // Debug===================================================
+        const tab = allTabs.find((t) => t.id === tabId);
         console.log(
           `[MCT-Debug] getOldestMessage found for Tab (Full search):`,
           {
@@ -638,26 +654,67 @@ export class MultipleChatTabs {
    * Get Oldest Load Message ID
    * @param {string} tabId
    * @param {jQuery} [scope=ui.chat.element]
+   * @param {object} [options={}]
+   * @param {boolean} [options.isFirst=false]
    * @returns {string|null}
    */
-  static getOldestLoadMessage(tabId, scope) {
+  static getOldestLoadMessage(tabId, scope, { isFirst = false } = {}) {
     if (!tabId) return null;
     const targetElement = scope || ui.chat.element;
+    const windowId = targetElement.attr("id") || "unknown-window";
+    const allTabs = this.getTabs();
+    const tab = allTabs.find((t) => t.id === tabId);
+
+    // Check first message
+    if (isFirst) {
+      const oldestMessageId = this.oldestMessage[tabId];
+      // Debug===================================================
+      console.log(
+        `[MCT-Debug] getOldestLoadMessage (Optimized: Copied from oldestMessage):`,
+        {
+          windowId: windowId,
+          tabName: tab?.label,
+          tabId: tabId,
+          copiedMessageId: oldestMessageId,
+        }
+      );
+      // Debug===================================================
+      return oldestMessageId;
+    }
+
+    // Full DOM search
     const chatLog = targetElement.find("#chat-log");
     if (!chatLog || !chatLog.length) return null;
-    const allTabs = this.getTabs();
-    if (allTabs.length === 0) return null;
-
     const messageElements = chatLog.find(".message");
     for (let i = 0; i < messageElements.length; i++) {
       const el = messageElements[i];
       const messageId = $(el).data("messageId");
       const message = game.messages.get(messageId);
-
       if (message && MessageFilter.filterMessage(message, allTabs, tabId)) {
+        // Debug===================================================
+        console.log(
+          `[MCT-Debug] getOldestLoadMessage found for Tab (Full DOM Scan):`,
+          {
+            windowId: windowId,
+            tabName: tab?.label,
+            tabId: tabId,
+            messageId: message.id,
+            messageContent: message.content,
+            messageObject: message,
+          }
+        );
+        // Debug===================================================
         return message.id;
       }
     }
+    // Debug===================================================
+    console.log(`[MCT-Debug] getOldestLoadMessage found no message for Tab:`, {
+      windowId: windowId,
+      tabName: tab?.label,
+      tabId: tabId,
+      messageId: null,
+    });
+    // Debug===================================================
     return null;
   }
 
@@ -689,6 +746,20 @@ export class MultipleChatTabs {
     this.applyFilter(chat.element, { scroll: false });
 
     setTimeout(() => {
+      // Update oldestLoadMessage
+      const windowId = chat.element.attr("id");
+      const activeTabId = this.activeFilter;
+
+      if (windowId && activeTabId) {
+        if (!this.oldestLoadMessage[windowId]) {
+          this.oldestLoadMessage[windowId] = {};
+        }
+        // Re-calculate the oldestLoadMessage for the active tab in this window.
+        this.oldestLoadMessage[windowId][activeTabId] =
+          this.getOldestLoadMessage(activeTabId, chat.element);
+      }
+
+      // Scroll position
       const newScrollHeight = chatLog[0].scrollHeight;
       const heightDifference = newScrollHeight - oldScrollHeight;
       const newScrollTop = oldScrollTop + heightDifference;
