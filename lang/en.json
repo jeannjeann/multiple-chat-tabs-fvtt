@@ -30,7 +30,7 @@
       },
       "autoLoad": {
         "name": "Auto-Load Past Messages",
-        "hint": "Automatically loads past messages (Core Autoload cannot be deactivated, Disabling it is recommended if performance problems occur, Per client setting)."
+        "hint": "Automatically loads past messages (Core Autoload cannot be deactivated, Per client setting)."
       },
       "loadBatchSize": {
         "name": "Message Load Size",

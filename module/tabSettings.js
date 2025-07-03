@@ -49,7 +49,7 @@ export class TabSettings extends FormApplication {
     const tabId = item.dataset.tabId;
     const tabData = MultipleChatTabs.getTabs().find((t) => t.id === tabId);
 
-    // Prevent dragging the default tab
+    // Prevent default tab drag
     if (tabData?.isDefault) {
       event.preventDefault();
       ui.notifications.warn(
@@ -451,7 +451,7 @@ export class TabDetailSettings extends FormApplication {
                 game.i18n.localize("MCT.notifications.cannotBeEmpty")
               );
             }
-            if (newId === this.tabId) return; // No change
+            if (newId === this.tabId) return;
 
             const allTabs = MultipleChatTabs.getTabs();
             if (allTabs.some((t) => t.id === newId)) {

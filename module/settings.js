@@ -68,7 +68,7 @@ export function registerSettings() {
     config: true,
     type: Number,
     range: {
-      min: 10,
+      min: 50,
       max: 500,
       step: 10,
     },

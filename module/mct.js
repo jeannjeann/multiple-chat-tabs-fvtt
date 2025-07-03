@@ -73,7 +73,7 @@ Hooks.on("renderChatLog", async (app, html, data) => {
 
     // Load message listener
     const debouncedMutationHandler = foundry.utils.debounce(
-      MultipleChatTabs._updateLoaedMessage,
+      (mutations, observer) => MultipleChatTabs._updateLoaedMessage(mutations),
       100
     );
     const observer = new MutationObserver(debouncedMutationHandler);

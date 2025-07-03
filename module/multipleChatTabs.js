@@ -746,19 +746,6 @@ export class MultipleChatTabs {
     this.applyFilter(chat.element, { scroll: false });
 
     setTimeout(() => {
-      // Update oldestLoadMessage
-      const windowId = chat.element.attr("id");
-      const activeTabId = this.activeFilter;
-
-      if (windowId && activeTabId) {
-        if (!this.oldestLoadMessage[windowId]) {
-          this.oldestLoadMessage[windowId] = {};
-        }
-        // Re-calculate the oldestLoadMessage for the active tab in this window.
-        this.oldestLoadMessage[windowId][activeTabId] =
-          this.getOldestLoadMessage(activeTabId, chat.element);
-      }
-
       // Scroll position
       const newScrollHeight = chatLog[0].scrollHeight;
       const heightDifference = newScrollHeight - oldScrollHeight;
@@ -807,10 +794,56 @@ export class MultipleChatTabs {
    * check load message
    * @private
    */
-  static _updateLoaedMessage() {
-    // Debug
-    console.log(`[MCT-Debug] Chat log DOM changed.`);
-    // Debug
+  static _updateLoaedMessage(mutations) {
+    let isLoadMessage = false;
+
+    for (const mutation of mutations) {
+      if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
+        const addedMessages = Array.from(mutation.addedNodes).filter(
+          (node) =>
+            node.nodeType === Node.ELEMENT_NODE &&
+            node.tagName === "LI" &&
+            node.classList.contains("message")
+        );
+        if (addedMessages.length > 10) {
+          if (
+            !mutation.previousSibling ||
+            mutation.target.firstElementChild === addedMessages[0]
+          ) {
+            isLoadMessage = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (isLoadMessage) {
+      // Debug
+      console.log(
+        `[MCT-Debug] Core Auto-load detected based on multiple messages prepended! Recalculating oldestLoadMessage.`
+      );
+      // Debug
+      // Update oldestLoadMessage
+      const windowScopes = [
+        ui.chat.element,
+        ...Object.values(ui.windows)
+          .filter((w) => w.id.startsWith("chat-popout"))
+          .map((w) => w.element),
+      ];
+      const activeTabId = this.activeFilter;
+
+      for (const scope of windowScopes) {
+        if (!scope || !activeTabId) continue;
+        const windowId = scope.attr("id");
+        if (!windowId) continue;
+
+        if (!this.oldestLoadMessage[windowId]) {
+          this.oldestLoadMessage[windowId] = {};
+        }
+        this.oldestLoadMessage[windowId][activeTabId] =
+          this.getOldestLoadMessage(activeTabId, scope);
+      }
+    }
   }
 
   /**
