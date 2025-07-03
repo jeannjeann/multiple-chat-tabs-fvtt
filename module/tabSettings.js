@@ -384,6 +384,10 @@ export class TabDetailSettings extends FormApplication {
     const tabIndex = allTabs.findIndex((t) => t.id === this.tabId);
     if (tabIndex === -1) return;
 
+    // Clear property
+    MultipleChatTabs.oldestMessage = {};
+    MultipleChatTabs.oldestLoadMessage = {};
+
     const expandedData = foundry.utils.expandObject(formData);
 
     // Save tab setting

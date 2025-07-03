@@ -571,21 +571,66 @@ export class MultipleChatTabs {
   /**
    * Get Oldest Message ID
    * @param {string} tabId
+   * @param {object} [options={}]
+   * @param {ChatMessage} [options.newMessage=null]
+   * @param {boolean} [options.isFirst=false]
    * @returns {string|null}
    */
-  static getOldestMessage(tabId) {
+  static getOldestMessage(tabId, { newMessage = null, isFirst = false } = {}) {
     if (!tabId) return null;
     const allTabs = this.getTabs();
     if (allTabs.length === 0) return null;
 
+    // Check first message
+    if (newMessage && isFirst) {
+      if (MessageFilter.filterMessage(newMessage, allTabs, tabId)) {
+        const tab = allTabs.find((t) => t.id === tabId);
+        // Debug===================================================
+        console.log(
+          `[MCT-Debug] getOldestMessage found for Tab (Optimized: First message for this tab):`,
+          {
+            tabName: tab?.label,
+            tabId: tabId,
+            messageId: newMessage.id,
+            messageContent: newMessage.content,
+            messageObject: newMessage,
+          }
+        );
+        // Debug===================================================
+        return newMessage.id;
+      }
+    }
+
+    // Full search
     const sortedMessages = [...game.messages].sort(
       (a, b) => a.timestamp - b.timestamp
     );
     for (const message of sortedMessages) {
       if (MessageFilter.filterMessage(message, allTabs, tabId)) {
+        const tab = allTabs.find((t) => t.id === tabId);
+        // Debug===================================================
+        console.log(
+          `[MCT-Debug] getOldestMessage found for Tab (Full search):`,
+          {
+            tabName: tab?.label,
+            tabId: tabId,
+            messageId: message.id,
+            messageContent: message.content,
+            messageObject: message,
+          }
+        );
+        // Debug===================================================
         return message.id;
       }
     }
+    // Debug===================================================
+    const tab = allTabs.find((t) => t.id === tabId);
+    console.log(`[MCT-Debug] getOldestMessage found for Tab:`, {
+      tabName: tab?.label,
+      tabId: tabId,
+      messageId: null,
+    });
+    // Debug===================================================
     return null;
   }
 
@@ -680,9 +725,11 @@ export class MultipleChatTabs {
    * @private
    */
   static _onScrollToTop(thresholdPx) {
+    // Debug
     console.log(
       `[MCT-Debug] Scrolled near the top (within ${Math.round(thresholdPx)}px)!`
     );
+    // Debug
   }
 
   /**
@@ -690,7 +737,9 @@ export class MultipleChatTabs {
    * @private
    */
   static _updateLoaedMessage() {
+    // Debug
     console.log(`[MCT-Debug] Chat log DOM changed.`);
+    // Debug
   }
 
   /**

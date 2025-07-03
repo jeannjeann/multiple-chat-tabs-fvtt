@@ -185,7 +185,10 @@ Hooks.on("createChatMessage", async (message) => {
   // Set first oldestMessage
   for (const tabId of targetTabIds) {
     if (!MultipleChatTabs.oldestMessage[tabId]) {
-      MultipleChatTabs.oldestMessage[tabId] = message.id;
+      MultipleChatTabs.oldestMessage[tabId] = MultipleChatTabs.getOldestMessage(
+        tabId,
+        { newMessage: message, isFirst: true }
+      );
     }
 
     // Set firest oldestLoadMessage
@@ -217,6 +220,16 @@ Hooks.on("createChatMessage", async (message) => {
   if (needsRefresh && ui.chat && ui.chat.element) {
     await MultipleChatTabs.refreshTabUI(ui.chat.element);
   }
+});
+
+Hooks.on("updateChatMessage", (message, data, options) => {
+  MultipleChatTabs.oldestMessage = {};
+  MultipleChatTabs.oldestLoadMessage = {};
+});
+
+Hooks.on("deleteChatMessage", (message, options, userId) => {
+  MultipleChatTabs.oldestMessage = {};
+  MultipleChatTabs.oldestLoadMessage = {};
 });
 
 Hooks.on("preCreateChatMessage", (message, data, options, userId) => {

@@ -29,6 +29,8 @@ export function registerSettings() {
     type: Boolean,
     default: false,
     onChange: () => {
+      MultipleChatTabs.oldestMessage = {};
+      MultipleChatTabs.oldestLoadMessage = {};
       if (ui.chat && ui.chat.element) {
         MultipleChatTabs.refreshTabUI(ui.chat.element);
       }
@@ -125,6 +127,8 @@ export function registerSettings() {
       },
     ]),
     onChange: () => {
+      MultipleChatTabs.oldestMessage = {};
+      MultipleChatTabs.oldestLoadMessage = {};
       setTimeout(() => {
         if (ui.chat && ui.chat.element) {
           MultipleChatTabs.refreshTabUI(ui.chat.element);
