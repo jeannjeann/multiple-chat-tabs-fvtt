@@ -1,119 +1,375 @@
-class MultipleChatTabs {
-  // Set default tab
-  static activeFilter = "tab1";
-
-  /**
-   * Add tabs UI
-   * @param {jQuery} html
-   */
-  static async addTabs(html) {
-    const existingTabs = html.find(".multiple-chat-tabs-nav");
-    if (existingTabs.length > 0) {
-      existingTabs.find(".item").removeClass("active");
-      existingTabs
-        .find(`.item[data-filter="${this.activeFilter}"]`)
-        .addClass("active");
-      return;
-    }
-
-    const tabsHtml = await renderTemplate(
-      "modules/multiple-chat-tabs/templates/chat-tabs.hbs",
-      {}
-    );
-    const tabsElement = $(tabsHtml);
-
-    tabsElement.find(".item").removeClass("active");
-    tabsElement
-      .find(`.item[data-filter="${this.activeFilter}"]`)
-      .addClass("active");
-
-    tabsElement.find(".item").on("click", this._onTabClick.bind(this));
-    html.find("#chat-log").before(tabsElement);
-  }
-
-  /**
-   * Click event handler
-   * @param {Event} event
-   */
-  static _onTabClick(event) {
-    event.preventDefault();
-    const clickedFilter = event.currentTarget.dataset.filter;
-
-    if (this.activeFilter === clickedFilter) return;
-
-    this.activeFilter = clickedFilter;
-
-    const nav = $(event.currentTarget).closest(".multiple-chat-tabs-nav");
-    nav.find(".item").removeClass("active");
-    $(event.currentTarget).addClass("active");
-
-    this.applyFilter();
-  }
-
-  /**
-   * Separate chat log and show
-   * @param {jQuery} [scope]
-   */
-  static applyFilter(scope) {
-    const chatLog = scope ? scope.find("#chat-log") : $("#chat-log");
-    if (!chatLog.length) return;
-
-    const messages = chatLog.find(".message");
-
-    messages.each((i, el) => {
-      const messageElement = $(el);
-      const message = game.messages.get(messageElement.data("messageId"));
-
-      if (!message) {
-        messageElement.show();
-        return;
-      }
-
-      let show = false;
-      const sourceTab = message.getFlag("multiple-chat-tabs", "sourceTab");
-
-      if (sourceTab) {
-        show = sourceTab === this.activeFilter;
-      } else {
-        show = this.activeFilter === "tab1";
-      }
-
-      messageElement.toggle(show);
-    });
-
-    if (ui.chat) {
-      ui.chat.scrollBottom();
-    }
-  }
-}
+import { MultipleChatTabs } from "./multipleChatTabs.js";
+import { registerSettings } from "./settings.js";
+import { TabDetailSettings } from "./tabSettings.js";
+import { MessageFilter } from "./messageFilter.js";
 
 /**
- * Initialize module
+ * Init hook
  */
 Hooks.once("init", async function () {
-  const templatePaths = ["modules/multiple-chat-tabs/templates/chat-tabs.hbs"];
-  await loadTemplates(templatePaths);
-  console.log("Chat Filter Tabs | Templates pre-loaded.");
-
-  // Override ChatLog.scrollBottom method
-  ChatLog.prototype.scrollBottom = function () {
-    setTimeout(() => {
-      const log = this.element.find("#chat-log");
-      if (log.length) {
-        // Scroll to bottom
-        log.scrollTop(log[0].scrollHeight);
-      }
-    }, 50); // Wait a bit
-  };
-
-  Hooks.on("renderChatLog", async (app, html, data) => {
-    await MultipleChatTabs.addTabs(html);
-    MultipleChatTabs.applyFilter(html);
-  });
-
-  Hooks.on("preCreateChatMessage", (message, data, options, userId) => {
-    message.updateSource({
-      "flags.multiple-chat-tabs.sourceTab": MultipleChatTabs.activeFilter,
-    });
+  // Open detail from context menu
+  Hooks.on("mct:requestTabEdit", (tabId) => {
+    if (tabId) {
+      new TabDetailSettings(tabId).render(true);
+    }
   });
 });
+
+/**
+ * Setup hook
+ */
+Hooks.once("setup", function () {
+  registerSettings();
+});
+
+/**
+ * Ready hook
+ */
+Hooks.once("ready", function () {
+  const debouncedResizeHandler = foundry.utils.debounce(() => {
+    if (ui.chat && ui.chat.element) {
+      // Main
+      MultipleChatTabs.updateScrollButtons(ui.chat.element);
+      MultipleChatTabs._adjustScrollButtonPosition();
+      // Update oldestLoadMessage
+      const mainScope = ui.chat.element;
+      const mainTabId = MultipleChatTabs.activeFilter;
+      if (mainTabId) {
+        const windowId = mainScope.attr("id");
+        if (!MultipleChatTabs.oldestLoadMessage[windowId]) {
+          MultipleChatTabs.oldestLoadMessage[windowId] = {};
+        }
+        MultipleChatTabs.oldestLoadMessage[windowId][mainTabId] =
+          MultipleChatTabs.getOldestLoadMessage(mainTabId, mainScope);
+      }
+      // Loadable check
+      MultipleChatTabs._requestLoad(mainScope);
+
+      // Popup
+      Object.values(ui.windows)
+        .filter((w) => w.id.startsWith("chat-popout") && w.element)
+        .forEach((popout) => {
+          const popoutScope = popout.element;
+          const popoutTabId = MultipleChatTabs.activeFilter;
+          MultipleChatTabs.updateScrollButtons(popoutScope);
+          // Update oldestLoadMessage
+          if (popoutTabId) {
+            const windowId = popoutScope.attr("id");
+            if (!MultipleChatTabs.oldestLoadMessage[windowId]) {
+              MultipleChatTabs.oldestLoadMessage[windowId] = {};
+            }
+            MultipleChatTabs.oldestLoadMessage[windowId][popoutTabId] =
+              MultipleChatTabs.getOldestLoadMessage(popoutTabId, popoutScope);
+          }
+          // Loadable check
+          MultipleChatTabs._requestLoad(popoutScope);
+        });
+    }
+  }, 250);
+  $(window).on("resize", debouncedResizeHandler);
+
+  /* Monkey Patch
+  // Override scrollBottom
+  if (!ChatLog.prototype._originalScrollBottom) {
+    ChatLog.prototype._originalScrollBottom = ChatLog.prototype.scrollBottom;
+    ChatLog.prototype.scrollBottom = function () {
+      setTimeout(() => {
+        const log = this.element.find("#chat-log");
+        if (log.length) {
+          log.scrollTop(log[0].scrollHeight);
+        }
+      }, 50);
+    };
+  }
+  */
+
+  // Initial scrollBottom
+  if (ui.chat && ui.chat.element) {
+    setTimeout(() => {
+      ui.chat.scrollBottom();
+    }, 500);
+  }
+
+  // Initial loadable check
+  if (ui.chat && ui.chat.element) {
+    setTimeout(() => {
+      _requestCheckAllWin();
+    }, 100);
+  }
+});
+
+Hooks.on("renderChatLog", async (app, html, data) => {
+  const chatLog = html.find("#chat-log");
+  if (chatLog.length) {
+    // Chat scroll listener
+    const throttledScrollHandler = foundry.utils.throttle(
+      (event) => MultipleChatTabs._onScroll(event),
+      200
+    );
+    chatLog.on("scroll", throttledScrollHandler);
+
+    // Load message listener
+    const debouncedMutationHandler = foundry.utils.debounce(
+      (mutations, observer) => MultipleChatTabs._updateLoaedMessage(mutations),
+      100
+    );
+    const observer = new MutationObserver(debouncedMutationHandler);
+    observer.observe(chatLog[0], {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      characterData: true,
+    });
+  }
+
+  // Message load button
+  html.find(".mct-load-more-container").remove();
+
+  if (chatLog.length) {
+    const loadButtonHtml = `
+        <div class="mct-load-more-container" title="${game.i18n.localize(
+          "MCT.tooltips.loadButton"
+        )}">
+          <a><i class="fas fa-chevron-up"></i></a>
+        </div>
+      `;
+    chatLog.before(loadButtonHtml);
+  }
+
+  await MultipleChatTabs.refreshTabUI(html);
+});
+
+Hooks.on("renderChatMessage", (message, html, data) => {
+  MultipleChatTabs.applyFilterToMessage(html);
+});
+
+Hooks.on("createChatMessage", async (message) => {
+  // Whisper tab check
+  const autoWhisper = game.settings.get("multiple-chat-tabs", "autoWhisperTab");
+  if (autoWhisper && message.whisper.length > 0 && game.user.isGM) {
+    const allTabs = MultipleChatTabs.getTabs();
+    const whisperGroup = new Set(
+      [message.author?.id, ...message.whisper].filter(Boolean)
+    );
+
+    const matchTab = allTabs.some((tab) => {
+      if (!tab.isWhisperTab || !tab.whisperTargets) return false;
+      const tabTargets = new Set(tab.whisperTargets.filter(Boolean));
+      return (
+        tabTargets.size === whisperGroup.size &&
+        [...whisperGroup].every((id) => tabTargets.has(id))
+      );
+    });
+
+    if (!matchTab) {
+      const whisperMember = [...whisperGroup];
+      let newLabel = "";
+      const isAllGMs = whisperMember.every((id) => game.users.get(id)?.isGM);
+      const playerMember = whisperMember.filter(
+        (id) => !game.users.get(id)?.isGM
+      );
+
+      if (isAllGMs) {
+        if (whisperMember.length === 1) {
+          newLabel = game.users.get(whisperMember[0])?.name || "GM";
+        } else {
+          newLabel = "GMs";
+        }
+      } else {
+        const memberName = playerMember
+          .map((id) => game.users.get(id)?.name || "Unknown")
+          .sort();
+        newLabel = memberName.join(" & ");
+      }
+
+      const newTab = {
+        id: `tab-${foundry.utils.randomID(16)}`,
+        label: newLabel,
+        isDefault: false,
+        showAllMessages: false,
+        forceOOC: false,
+        force: {},
+        isWhisperTab: true,
+        whisperTargets: whisperMember,
+      };
+
+      const newTabs = [...allTabs, newTab];
+      await game.settings.set(
+        "multiple-chat-tabs",
+        "tabs",
+        JSON.stringify(newTabs)
+      );
+    }
+  }
+
+  // All show, whisper, unread check
+  const currentTabs = MultipleChatTabs.getTabs();
+  if (currentTabs.length === 0) return;
+  const targetTabIds = MessageFilter.getVisibleTabsForMessage(
+    message,
+    currentTabs
+  );
+
+  currentTabs.forEach((tab) => {
+    if (
+      tab.showAllMessages &&
+      !(tab.isWhisperTab && message.whisper.length === 0)
+    ) {
+      targetTabIds.add(tab.id);
+    }
+  });
+
+  // Set first oldestMessage
+  for (const tabId of targetTabIds) {
+    if (!MultipleChatTabs.oldestMessage[tabId]) {
+      MultipleChatTabs.oldestMessage[tabId] = MultipleChatTabs.getOldestMessage(
+        tabId,
+        { newMessage: message, isFirst: true }
+      );
+
+      // Set first  oldestLoadMessage
+      const windowScopes = [
+        ui.chat.element,
+        ...Object.values(ui.windows)
+          .filter((w) => w.id.startsWith("chat-popout"))
+          .map((w) => w.element),
+      ];
+      for (const scope of windowScopes) {
+        if (!scope) continue;
+        const windowId = scope.attr("id");
+        if (!MultipleChatTabs.oldestLoadMessage[windowId]) {
+          MultipleChatTabs.oldestLoadMessage[windowId] = {};
+        }
+        MultipleChatTabs.oldestLoadMessage[windowId][tabId] =
+          MultipleChatTabs.getOldestLoadMessage(tabId, scope, {
+            isFirst: true,
+          });
+      }
+    }
+  }
+
+  // Refresh unread count
+  let needsRefresh = false;
+  for (const tabId of targetTabIds) {
+    if (tabId !== MultipleChatTabs.activeFilter) {
+      await MultipleChatTabs.increaseUnreadCount(tabId);
+      needsRefresh = true;
+    }
+  }
+
+  if (needsRefresh && ui.chat && ui.chat.element) {
+    await MultipleChatTabs.refreshTabUI(ui.chat.element);
+  }
+
+  // Loadable check
+  _requestCheckAllWin();
+});
+
+Hooks.on("updateChatMessage", (message, data, options) => {
+  const activeTabId = MultipleChatTabs.activeFilter;
+  if (activeTabId) {
+    // Update oldestMessage
+    MultipleChatTabs.oldestMessage[activeTabId] =
+      MultipleChatTabs.getOldestMessage(activeTabId);
+    // Update oldestLoadMessage
+    const scopes = [
+      ui.chat.element,
+      ...Object.values(ui.windows)
+        .filter((w) => w.id.startsWith("chat-popout") && w.element)
+        .map((w) => w.element),
+    ];
+    scopes.forEach((scope) => {
+      if (!scope) return;
+      const windowId = scope.attr("id");
+      if (!MultipleChatTabs.oldestLoadMessage[windowId]) {
+        MultipleChatTabs.oldestLoadMessage[windowId] = {};
+      }
+      MultipleChatTabs.oldestLoadMessage[windowId][activeTabId] =
+        MultipleChatTabs.getOldestLoadMessage(activeTabId, scope);
+    });
+  }
+  // Loadable check
+  _requestCheckAllWin();
+});
+
+Hooks.on("deleteChatMessage", (message, options, userId) => {
+  const activeTabId = MultipleChatTabs.activeFilter;
+  if (activeTabId) {
+    // Update oldestMessage
+    MultipleChatTabs.oldestMessage[activeTabId] =
+      MultipleChatTabs.getOldestMessage(activeTabId);
+    // Update oldestLoadMessage
+    const scopes = [
+      ui.chat.element,
+      ...Object.values(ui.windows)
+        .filter((w) => w.id.startsWith("chat-popout") && w.element)
+        .map((w) => w.element),
+    ];
+    scopes.forEach((scope) => {
+      if (!scope) return;
+      const windowId = scope.attr("id");
+      if (!MultipleChatTabs.oldestLoadMessage[windowId]) {
+        MultipleChatTabs.oldestLoadMessage[windowId] = {};
+      }
+      MultipleChatTabs.oldestLoadMessage[windowId][activeTabId] =
+        MultipleChatTabs.getOldestLoadMessage(activeTabId, scope);
+    });
+  }
+  // Loadable check
+  _requestCheckAllWin();
+});
+
+Hooks.on("preCreateChatMessage", (message, data, options, userId) => {
+  const allTabs = MultipleChatTabs.getTabs();
+  const activeTabId = MultipleChatTabs.activeFilter || allTabs[0]?.id;
+
+  const updateData = { "flags.multiple-chat-tabs.sourceTab": activeTabId };
+
+  if (activeTabId) {
+    const activeTab = allTabs.find((t) => t.id === activeTabId);
+
+    if (activeTab?.isWhisperTab && activeTab.whisperTargets?.length > 0) {
+      // Foece whisper check
+      const targets = activeTab.whisperTargets.filter(
+        (id) => id !== game.user.id
+      );
+      if (
+        targets.length === 0 &&
+        activeTab.whisperTargets.includes(game.user.id)
+      ) {
+        targets.push(game.user.id);
+      }
+      if (targets.length > 0) {
+        updateData.whisper = targets;
+        updateData.style = CONST.CHAT_MESSAGE_STYLES.OTHER;
+        updateData.speaker = {
+          scene: null,
+          actor: null,
+          token: null,
+          alias: undefined,
+        };
+      }
+    } else if (activeTab?.forceOOC) {
+      // Force OOC check
+      if (message.style === CONST.CHAT_MESSAGE_STYLES.IC) {
+        updateData.style = CONST.CHAT_MESSAGE_STYLES.OOC;
+        updateData.speaker = {
+          scene: null,
+          actor: null,
+          token: null,
+          alias: undefined,
+        };
+      }
+    }
+  }
+  message.updateSource(updateData);
+});
+
+function _requestCheckAllWin() {
+  // Sidebar
+  MultipleChatTabs._requestLoad(ui.chat.element);
+  // Popup
+  Object.values(ui.windows)
+    .filter((w) => w.id.startsWith("chat-popout") && w.element)
+    .forEach((popout) => MultipleChatTabs._requestLoad(popout.element));
+}

@@ -1,14 +1,22 @@
-<nav class="multiple-chat-tabs-nav tabs">
-    <a class="item active" data-filter="tab1">
-        {{localize "MCT.Tab1"}}
-    </a>
-    <a class="item" data-filter="tab2">
-        {{localize "MCT.Tab2"}}
-    </a>
-    <a class="item" data-filter="tab3">
-        {{localize "MCT.Tab3"}}
-    </a>
-    <a class="item" data-filter="tab4">
-        {{localize "MCT.Tab4"}}
-    </a>
-</nav>
+{{#if tabs}}
+<div class="mct-container">
+    <button class="scroll-btn left" style="display: none;"><i class="fas fa-chevron-left"></i></button>
+    <div class="mct-scroller">
+        <nav class="multiple-chat-tabs-nav tabs">
+            {{#each tabs}}
+            <a class="item {{#if this.isWhisperTab}}multiple-chat-tabs-whisper-tab{{/if}}" data-filter="{{this.id}}">{{this.label}}{{#if this.unreadCount}}
+                {{#if ../showCount}}
+                <span class="unread-indicator count">{{this.unreadCount}}</span>
+                {{else}}
+                <span class="unread-indicator dot"></span>
+                {{/if}}
+            {{/if}}</a>
+            {{/each}}
+        </nav>
+    </div>
+    <button class="scroll-btn right" style="display: none;"><i class="fas fa-chevron-right"></i></button>
+    {{#if isGM}}
+    <button class="add-tab-btn" title="{{localize 'MCT.tabs.tooltips.add'}}"><i class="fas fa-plus"></i></button>
+    {{/if}}
+</div>
+{{/if}}

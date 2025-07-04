@@ -1,6 +1,126 @@
 {
-  "MCT.Tab1": "タブ1",
-  "MCT.Tab2": "タブ2",
-  "MCT.Tab3": "タブ3",
-  "MCT.Tab4": "タブ4"
+  "MCT": {
+    "menu": {
+      "name": "",
+      "label": "タブ設定"
+    },
+    "context": {
+      "settings": "設定",
+      "delete": "削除",
+      "tabSettings": "タブ設定"
+    },
+    "settings": {
+      "windowTitle": "チャットタブ設定",
+      "hint": "詳細設定ウィンドウ表示、タブ追加、タブ削除、ドラッグで並び順変更",
+      "buttons": {
+        "add": "タブを追加",
+        "reset": "リセット"
+      },
+      "autoWhisperTab": {
+        "name": "ウィスパータブを自動作成",
+        "hint": "ON: ウィスパー発言時に該当するタブが存在しない場合に自動的でタブを作成"
+      },
+      "showAloneMessageToDefaultTab": {
+        "name": "孤立メッセージをデフォルトタブに表示",
+        "hint": "ON: 孤立メッセージ（このモジュールが無効な状態でのメッセージ、消去したタブのメッセージなど）をデフォルトタブに表示、 OFF: 「すべてのメッセージを表示」オプションを有効したタブで表示可能"
+      },
+      "unreadCount": {
+        "name": "未読マークに未読数を表示",
+        "hint": "ON: 未読メッセージの数を表示、 OFF: 未読マークのみ表示 （クライアント毎の設定）"
+      },
+      "autoLoad": {
+        "name": "メッセージのオートロード",
+        "hint": "ON: 過去のメッセージを自動でロード、 OFF: ボタンによる手動ロード（コアのオートロードは無効にならない、クライアント毎の設定）"
+      },
+      "loadBatchSize": {
+        "name": "メッセージロードサイズ",
+        "hint": "一回でロードする過去のメッセージの件数を設定 （クライアント毎の設定）"
+      },
+      "defaults": {
+        "main": "メイン",
+        "roll": "ロール",
+        "sub": "サブ",
+        "newTabName": "新規タブ"
+      },
+      "tooltips": {
+        "edit": "タブの詳細設定",
+        "delete": "タブを削除",
+        "reset": "タブ設定を初期状態に戻す",
+        "defaultTab": "デフォルトタブの並べ替え不可",
+        "tabIdList": "タブIDリスト"
+      }
+    },
+    "detailSettings": {
+      "windowTitle": "タブ詳細設定",
+      "label": "タブ名",
+      "showAllMessages": {
+        "label": "このタブにすべてのメッセージを表示",
+        "hint": "ON: 他のタブの設定を無視してこのタブにすべてのメッセージを表示する。このモジュールが無効な状態でのメッセージ、消去したタブのメッセージなどの孤立メッセージを含む。"
+      },
+      "forceOOC": {
+        "label": "プレイヤー発言(OOC)へ自動的に変更",
+        "hint": "ON: このタブでの発言を自動的にプレイヤー発言(OOC)に変更する。"
+      },
+      "forceDisplayTitle": "メッセージの強制表示",
+      "forceDisplayHint": "メッセージタイプ別に強制表示を設定する。",
+      "whisperTab": {
+        "label": "ウィスパータブ",
+        "hint": "ON: このタブをウィスパー専用にする。このタブでの発言は自動的にウィスパーになる。他のタブ詳細設定は無効になる。",
+        "targets": "ウィスパー対象"
+      },
+      "tooltips": {
+        "moveDisabled": "「{tabName}」タブで「このタブだけに表示」が設定されているため選択できません",
+        "tabId": "タブID: {tabId}"
+      }
+    },
+    "forceOptions": {
+      "none": "強制表示なし",
+      "duplicate": "アクティブタブとこのタブに表示",
+      "move": "このタブだけに表示 "
+    },
+    "messageTypes": {
+      "ic": "キャラクター発言 (IC)",
+      "ooc": "プレイヤー発言 (OOC)",
+      "roll": "ロール結果",
+      "other": "その他"
+    },
+    "tabs": {
+      "tooltips": {
+        "add": "新規タブを追加"
+      }
+    },
+    "tooltips": {
+      "loadButton": "メッセージロード"
+    },
+    "dialog": {
+      "reset": {
+        "title": "タブ設定リセット",
+        "content": "すべてのタブの設定を初期状態に戻しますか？（すべてのメッセージがタブから切り離され、見えなくなります）"
+      },
+      "delete": {
+        "title": "タブ削除（タブID: {tabId}）",
+        "content": "「<strong>{name}</strong>」タブを削除しますか？"
+      },
+      "editTabId": {
+        "title": "タブID編集",
+        "label": "タブID"
+      },
+      "allTabID": {
+        "title": "タブIDリスト",
+        "currentTab": "タブID（現在）",
+        "orphanedTab": "タブID（履歴）",
+        "orphanedTabHint": "メッセージの履歴が存在するタブID",
+        "none": "タブIDは見つかりませんでした。",
+        "noneConfigured": "タブが設定されていません。"
+      }
+    },
+    "notifications": {
+      "cannotDeleteDefault": "デフォルトタブは削除できません。",
+      "cannotDragDefault": "デフォルトタブは並べ替えできません。",
+      "cannotBeEmpty": "IDを空にすることはできません。",
+      "alreadyExists": "そのIDは既に使用されています。",
+      "idCopied": "IDをクリップボードにコピーしました。"
+    },
+    "save": "保存"
+  }
 }
