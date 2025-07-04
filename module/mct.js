@@ -68,6 +68,7 @@ Hooks.once("ready", function () {
   }, 250);
   $(window).on("resize", debouncedResizeHandler);
 
+  /* Monkey Patch
   // Override scrollBottom
   if (!ChatLog.prototype._originalScrollBottom) {
     ChatLog.prototype._originalScrollBottom = ChatLog.prototype.scrollBottom;
@@ -80,6 +81,7 @@ Hooks.once("ready", function () {
       }, 50);
     };
   }
+  */
 
   // Initial scrollBottom
   if (ui.chat && ui.chat.element) {

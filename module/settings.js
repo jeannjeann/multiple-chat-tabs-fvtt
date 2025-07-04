@@ -2,6 +2,7 @@ import { MultipleChatTabs } from "./multipleChatTabs.js";
 import { TabSettings } from "./tabSettings.js";
 
 export function registerSettings() {
+  // Settings Menu
   game.settings.registerMenu("multiple-chat-tabs", "tab-settings", {
     name: "MCT.menu.name",
     label: "MCT.menu.label",
@@ -51,11 +52,12 @@ export function registerSettings() {
     },
   });
 
+  // Hidden parameter
   game.settings.register("multiple-chat-tabs", "auto-load-messages", {
     name: "MCT.settings.autoLoad.name",
     hint: "MCT.settings.autoLoad.hint",
     scope: "client",
-    config: true,
+    config: false,
     type: Boolean,
     default: true,
     requiresReload: true,
@@ -143,4 +145,21 @@ export function registerSettings() {
     type: Object,
     default: {},
   });
+
+  // libWrapper
+  if (game.modules.get("lib-wrapper")?.active) {
+    libWrapper.register(
+      "multiple-chat-tabs",
+      "ChatLog.prototype.scrollBottom",
+      function (wrapped, ...args) {
+        setTimeout(() => {
+          const log = this.element.find("#chat-log");
+          if (log.length) {
+            log.scrollTop(log[0].scrollHeight);
+          }
+        }, 50);
+      },
+      "OVERRIDE"
+    );
+  }
 }
