@@ -168,7 +168,7 @@ export class MultipleChatTabs {
           left: `${left}px`,
         });
 
-        // Menu click listeners
+        // Menu click listener
         menu.find("li").on("click", (e) => {
           const action = $(e.currentTarget).data("action");
           if (action === "edit") {
@@ -184,7 +184,7 @@ export class MultipleChatTabs {
         $(window).one("contextmenu", closeMenu);
       });
 
-    // Message Scroll listeners
+    // Tab Scroll button listener
     const scroller = html.find(".mct-scroller");
     if (!scroller.length) return;
     this.updateScrollButtons(html);
@@ -195,7 +195,7 @@ export class MultipleChatTabs {
       scroller.scrollLeft(scroller.scrollLeft() + scrollAmount * direction);
     });
 
-    // Tabbar scroll listeners
+    // Tabbar scroll listener
     scroller.off("scroll").on("scroll", () => this.updateScrollButtons(html));
     scroller.off("wheel").on("wheel", (event) => {
       event.preventDefault();
@@ -203,7 +203,7 @@ export class MultipleChatTabs {
       scroller.scrollLeft(scroller.scrollLeft() + delta);
     });
 
-    // Add tab button listeners
+    // Add tab button listener
     html
       .off("click", ".add-tab-btn")
       .on("click", ".add-tab-btn", this._onAddTabClick.bind(this));
@@ -354,6 +354,11 @@ export class MultipleChatTabs {
         this.oldestLoadMessage[windowId]?.[clickedFilter] || "Not set",
     });
     // Debug===================================================
+
+    // Loadable check
+    setTimeout(() => {
+      this._isLoadable(clickedFilter, appElement);
+    }, 50);
   }
 
   /**
@@ -778,15 +783,53 @@ export class MultipleChatTabs {
   }
 
   /**
-   * Check scroll position
-   * @param {number} thresholdPx
+   * Chat scroll event handler
+   * @param {Event} event
    * @private
    */
-  static _onScrollToTop(thresholdPx) {
+  static _onScroll(event) {
+    const chatLog = $(event.currentTarget);
+    const scope = chatLog.closest(".app");
+    if (!scope.length) return;
+
+    if (MultipleChatTabs.isOverflow(scope) && this._isScrollTop(chatLog)) {
+      this._onScrollTop();
+    }
+  }
+
+  /**
+   * Check scroll position
+   * @param {jQuery} chatLog The chat log element
+   * @returns {boolean}
+   * @private
+   */
+  static _isScrollTop(chatLog) {
+    if (!chatLog || !chatLog.length) return false;
+
+    const SCROLL_THRESHOLD_PERCENT = 0.05;
+    const thresholdPx = chatLog[0].clientHeight * SCROLL_THRESHOLD_PERCENT;
+    /*
     // Debug
-    console.log(
-      `[MCT-Debug] Scrolled near the top (within ${Math.round(thresholdPx)}px)!`
-    );
+    const currentScrollTop = chatLog.scrollTop();
+    console.log(`[MCT-Debug] _isScrollTop Check:`, {
+      currentScrollTop: currentScrollTop,
+      thresholdPx: thresholdPx,
+      isTop: currentScrollTop <= thresholdPx,
+    });
+    // Debug
+    */
+
+    return chatLog.scrollTop() <= thresholdPx;
+  }
+
+  /**
+   * Scroll top event handler
+   * @param {number}
+   * @private
+   */
+  static _onScrollTop() {
+    // Debug
+    console.log(`[MCT-Debug] Scrolled near the top!`);
     // Debug
   }
 
@@ -860,5 +903,44 @@ export class MultipleChatTabs {
       }
     }
     return allTabId;
+  }
+
+  /**
+   * Loadable check helper
+   * @param {string} tabId
+   * @param {jQuery} scope
+   * @private
+   */
+  static _isLoadable(tabId, scope) {
+    if (!tabId || !scope) return;
+
+    const allTabs = this.getTabs();
+    const tab = allTabs.find((t) => t.id === tabId);
+    const tabLabel = tab ? tab.label : null;
+    const oldestMessage = this.oldestMessage[tabId] || null;
+    const windowId = scope.attr("id");
+    const oldestLoadMessage = this.oldestLoadMessage[windowId]?.[tabId] || null;
+    const isOverflow = this.isOverflow(scope);
+    const chatLog = scope.find("#chat-log");
+    const isScrollTop = this._isScrollTop(chatLog);
+
+    const autoLoad = game.settings.get(
+      "multiple-chat-tabs",
+      "auto-load-messages"
+    );
+
+    // Check message loadable
+
+    // Show button or Auto load message
+
+    // Debug
+    console.log(`[MCT-Debug] _isLoadable: "${tabLabel}"`, {
+      OldestMessage: oldestMessage || "Not set",
+      OldestLoadMessage: oldestLoadMessage || "Not set",
+      Overflow: isOverflow,
+      ScrollTop: isScrollTop,
+      AutoLoad: autoLoad,
+    });
+    // Debug
   }
 }

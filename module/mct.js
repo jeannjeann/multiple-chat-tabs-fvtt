@@ -58,17 +58,10 @@ Hooks.on("renderChatLog", async (app, html, data) => {
   const chatLog = html.find("#chat-log");
   if (chatLog.length) {
     // Chat scroll listener
-    const SCROLL_THRESHOLD_PERCENT = 0.05;
-    const throttledScrollHandler = foundry.utils.throttle(() => {
-      const scrollThresholdPx =
-        chatLog[0].clientHeight * SCROLL_THRESHOLD_PERCENT;
-      if (
-        MultipleChatTabs.isOverflow(html) &&
-        chatLog.scrollTop() <= scrollThresholdPx
-      ) {
-        MultipleChatTabs._onScrollToTop(scrollThresholdPx);
-      }
-    }, 200);
+    const throttledScrollHandler = foundry.utils.throttle(
+      (event) => MultipleChatTabs._onScroll(event),
+      200
+    );
     chatLog.on("scroll", throttledScrollHandler);
 
     // Load message listener
@@ -104,6 +97,9 @@ Hooks.on("renderChatLog", async (app, html, data) => {
 
 Hooks.on("renderChatMessage", (message, html, data) => {
   MultipleChatTabs.applyFilterToMessage(html);
+  // Debug
+  console.log(`[MCT-Debug] Rendered message:`);
+  // Debug
 });
 
 Hooks.on("createChatMessage", async (message) => {
