@@ -548,6 +548,16 @@ export class MultipleChatTabs {
     if (scroll && ui.chat) {
       ui.chat.scrollBottom();
     }
+
+    // Scroll bottom button refresh
+    const chat = scope
+      ? Object.values(ui.windows).find((w) => w.element[0] === scope[0]) ??
+        ui.chat
+      : ui.chat;
+    if (chat && typeof chat._onScrollLog === "function") {
+      const fakeEvent = { currentTarget: chatLog[0], target: chatLog[0] };
+      chat._onScrollLog(fakeEvent);
+    }
   }
 
   /**
@@ -848,7 +858,7 @@ export class MultipleChatTabs {
             node.tagName === "LI" &&
             node.classList.contains("message")
         );
-        if (addedMessages.length > 10) {
+        if (addedMessages.length > 0) {
           if (
             !mutation.previousSibling ||
             mutation.target.firstElementChild === addedMessages[0]
