@@ -359,7 +359,7 @@ export class MultipleChatTabs {
       clickedTab.find(".unread-indicator").remove();
     }
 
-    // Debug===================================================
+    // Start Debug
     const tabLabel = clickedTab.text().replace(/\s*\d+\s*$/, "");
     console.log(`[MCT-Debug] Tab clicked: "${tabLabel}"`, {
       "Tab ID": clickedFilter,
@@ -369,7 +369,7 @@ export class MultipleChatTabs {
       "Oldest Loaded Message ID (DOM)":
         this.oldestLoadMessage[windowId]?.[clickedFilter] || "Not set",
     });
-    // Debug===================================================
+    // End Debug
 
     // Loadable check
     this._requestLoad(appElement);
@@ -629,7 +629,7 @@ export class MultipleChatTabs {
     // Check first message
     if (newMessage && isFirst) {
       if (MessageFilter.filterMessage(newMessage, allTabs, tabId)) {
-        // Debug===================================================
+        // Start Debug
         const tab = allTabs.find((t) => t.id === tabId);
         console.log(
           `[MCT-Debug] getOldestMessage found for Tab (Optimized: First message for this tab):`,
@@ -641,7 +641,7 @@ export class MultipleChatTabs {
             messageObject: newMessage,
           }
         );
-        // Debug===================================================
+        // End Debug
         return newMessage.id;
       }
     }
@@ -652,7 +652,7 @@ export class MultipleChatTabs {
     );
     for (const message of sortedMessages) {
       if (MessageFilter.filterMessage(message, allTabs, tabId)) {
-        // Debug===================================================
+        // Start Debug
         const tab = allTabs.find((t) => t.id === tabId);
         console.log(
           `[MCT-Debug] getOldestMessage found for Tab (Full search):`,
@@ -664,18 +664,18 @@ export class MultipleChatTabs {
             messageObject: message,
           }
         );
-        // Debug===================================================
+        // End Debug
         return message.id;
       }
     }
-    // Debug===================================================
+    // Start Debug
     const tab = allTabs.find((t) => t.id === tabId);
     console.log(`[MCT-Debug] getOldestMessage found for Tab:`, {
       tabName: tab?.label,
       tabId: tabId,
       messageId: null,
     });
-    // Debug===================================================
+    // End Debug
     return null;
   }
 
@@ -697,7 +697,7 @@ export class MultipleChatTabs {
     // Check first message
     if (isFirst) {
       const oldestMessageId = this.oldestMessage[tabId];
-      // Debug===================================================
+      // Start Debug
       console.log(
         `[MCT-Debug] getOldestLoadMessage (Optimized: Copied from oldestMessage):`,
         {
@@ -707,7 +707,7 @@ export class MultipleChatTabs {
           copiedMessageId: oldestMessageId,
         }
       );
-      // Debug===================================================
+      // End Debug
       return oldestMessageId;
     }
 
@@ -720,7 +720,7 @@ export class MultipleChatTabs {
       const messageId = $(el).data("messageId");
       const message = game.messages.get(messageId);
       if (message && MessageFilter.filterMessage(message, allTabs, tabId)) {
-        // Debug===================================================
+        // Start Debug
         console.log(
           `[MCT-Debug] getOldestLoadMessage found for Tab (Full DOM Scan):`,
           {
@@ -732,18 +732,18 @@ export class MultipleChatTabs {
             messageObject: message,
           }
         );
-        // Debug===================================================
+        // End Debug
         return message.id;
       }
     }
-    // Debug===================================================
+    // Start Debug
     console.log(`[MCT-Debug] getOldestLoadMessage found no message for Tab:`, {
       windowId: windowId,
       tabName: tab?.label,
       tabId: tabId,
       messageId: null,
     });
-    // Debug===================================================
+    // End Debug
     return null;
   }
 
@@ -842,9 +842,9 @@ export class MultipleChatTabs {
    * @private
    */
   static _onScrollTop(scope) {
-    // Debug
+    // Start Debug
     console.log(`[MCT-Debug] Scrolled near the top!`);
-    // Debug
+    // End Debug
     // Loadable check
     this._requestLoad(scope);
   }
@@ -879,11 +879,11 @@ export class MultipleChatTabs {
     }
 
     if (isLoadMessage) {
-      // Debug
+      // Start Debug
       console.log(
         `[MCT-Debug] Core Auto-load detected based on multiple messages prepended! Recalculating oldestLoadMessage.`
       );
-      // Debug
+      // End Debug
       // Update oldestLoadMessage
       const scope = $(targetElement).closest(".app");
       const windowId = scope.attr("id");
@@ -942,16 +942,25 @@ export class MultipleChatTabs {
     );
 
     // Check message loadable
+    let isLoadable = false;
+    if (oldestMessage && oldestMessage !== oldestLoadMessage && isScrollTop)
+      isLoadable = true;
 
     // Show button or Auto load message
     const loadButton = scope.find(".mct-load-more-container");
-    if (autoLoad) {
-      loadButton.hide();
+    if (isLoadable) {
+      if (autoLoad) {
+        // Start Debug
+        console.log("[MCT-Debug] AutoLoad");
+        // End Debug
+        this.loadMessage({ scope });
+      } else {
+        loadButton.show();
+      }
     } else {
-      loadButton.show();
+      loadButton.hide();
     }
-
-    // Debug
+    // Start Debug
     console.log(`[MCT-Debug] _isLoadable: "${tabLabel}"`, {
       OldestMessage: oldestMessage || "Not set",
       OldestLoadMessage: oldestLoadMessage || "Not set",
@@ -959,6 +968,6 @@ export class MultipleChatTabs {
       ScrollTop: isScrollTop,
       AutoLoad: autoLoad,
     });
-    // Debug
+    // End Debug
   }
 }
