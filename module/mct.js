@@ -26,12 +26,47 @@ Hooks.once("setup", function () {
  * Ready hook
  */
 Hooks.once("ready", function () {
-  $(window).on("resize", () => {
+  const debouncedResizeHandler = foundry.utils.debounce(() => {
     if (ui.chat && ui.chat.element) {
+      // Main
       MultipleChatTabs.updateScrollButtons(ui.chat.element);
       MultipleChatTabs._adjustScrollButtonPosition();
+      // Update oldestLoadMessage
+      const mainScope = ui.chat.element;
+      const mainTabId = MultipleChatTabs.activeFilter;
+      if (mainTabId) {
+        const windowId = mainScope.attr("id");
+        if (!MultipleChatTabs.oldestLoadMessage[windowId]) {
+          MultipleChatTabs.oldestLoadMessage[windowId] = {};
+        }
+        MultipleChatTabs.oldestLoadMessage[windowId][mainTabId] =
+          MultipleChatTabs.getOldestLoadMessage(mainTabId, mainScope);
+      }
+      // Loadable check
+      MultipleChatTabs._requestLoad(mainScope);
+
+      // Popup
+      Object.values(ui.windows)
+        .filter((w) => w.id.startsWith("chat-popout") && w.element)
+        .forEach((popout) => {
+          const popoutScope = popout.element;
+          const popoutTabId = MultipleChatTabs.activeFilter;
+          MultipleChatTabs.updateScrollButtons(popoutScope);
+          // Update oldestLoadMessage
+          if (popoutTabId) {
+            const windowId = popoutScope.attr("id");
+            if (!MultipleChatTabs.oldestLoadMessage[windowId]) {
+              MultipleChatTabs.oldestLoadMessage[windowId] = {};
+            }
+            MultipleChatTabs.oldestLoadMessage[windowId][popoutTabId] =
+              MultipleChatTabs.getOldestLoadMessage(popoutTabId, popoutScope);
+          }
+          // Loadable check
+          MultipleChatTabs._requestLoad(popoutScope);
+        });
     }
-  });
+  }, 250);
+  $(window).on("resize", debouncedResizeHandler);
 
   // Override scrollBottom
   if (!ChatLog.prototype._originalScrollBottom) {
@@ -51,6 +86,13 @@ Hooks.once("ready", function () {
     setTimeout(() => {
       ui.chat.scrollBottom();
     }, 500);
+  }
+
+  // Initial loadable check
+  if (ui.chat && ui.chat.element) {
+    setTimeout(() => {
+      _requestCheckAllWin();
+    }, 100);
   }
 });
 
@@ -219,16 +261,63 @@ Hooks.on("createChatMessage", async (message) => {
   if (needsRefresh && ui.chat && ui.chat.element) {
     await MultipleChatTabs.refreshTabUI(ui.chat.element);
   }
+
+  // Loadable check
+  _requestCheckAllWin();
 });
 
 Hooks.on("updateChatMessage", (message, data, options) => {
-  MultipleChatTabs.oldestMessage = {};
-  MultipleChatTabs.oldestLoadMessage = {};
+  const activeTabId = MultipleChatTabs.activeFilter;
+  if (activeTabId) {
+    // Update oldestMessage
+    MultipleChatTabs.oldestMessage[activeTabId] =
+      MultipleChatTabs.getOldestMessage(activeTabId);
+    // Update oldestLoadMessage
+    const scopes = [
+      ui.chat.element,
+      ...Object.values(ui.windows)
+        .filter((w) => w.id.startsWith("chat-popout") && w.element)
+        .map((w) => w.element),
+    ];
+    scopes.forEach((scope) => {
+      if (!scope) return;
+      const windowId = scope.attr("id");
+      if (!MultipleChatTabs.oldestLoadMessage[windowId]) {
+        MultipleChatTabs.oldestLoadMessage[windowId] = {};
+      }
+      MultipleChatTabs.oldestLoadMessage[windowId][activeTabId] =
+        MultipleChatTabs.getOldestLoadMessage(activeTabId, scope);
+    });
+  }
+  // Loadable check
+  _requestCheckAllWin();
 });
 
 Hooks.on("deleteChatMessage", (message, options, userId) => {
-  MultipleChatTabs.oldestMessage = {};
-  MultipleChatTabs.oldestLoadMessage = {};
+  const activeTabId = MultipleChatTabs.activeFilter;
+  if (activeTabId) {
+    // Update oldestMessage
+    MultipleChatTabs.oldestMessage[activeTabId] =
+      MultipleChatTabs.getOldestMessage(activeTabId);
+    // Update oldestLoadMessage
+    const scopes = [
+      ui.chat.element,
+      ...Object.values(ui.windows)
+        .filter((w) => w.id.startsWith("chat-popout") && w.element)
+        .map((w) => w.element),
+    ];
+    scopes.forEach((scope) => {
+      if (!scope) return;
+      const windowId = scope.attr("id");
+      if (!MultipleChatTabs.oldestLoadMessage[windowId]) {
+        MultipleChatTabs.oldestLoadMessage[windowId] = {};
+      }
+      MultipleChatTabs.oldestLoadMessage[windowId][activeTabId] =
+        MultipleChatTabs.getOldestLoadMessage(activeTabId, scope);
+    });
+  }
+  // Loadable check
+  _requestCheckAllWin();
 });
 
 Hooks.on("preCreateChatMessage", (message, data, options, userId) => {
@@ -276,3 +365,12 @@ Hooks.on("preCreateChatMessage", (message, data, options, userId) => {
   }
   message.updateSource(updateData);
 });
+
+function _requestCheckAllWin() {
+  // Sidebar
+  MultipleChatTabs._requestLoad(ui.chat.element);
+  // Popup
+  Object.values(ui.windows)
+    .filter((w) => w.id.startsWith("chat-popout") && w.element)
+    .forEach((popout) => MultipleChatTabs._requestLoad(popout.element));
+}

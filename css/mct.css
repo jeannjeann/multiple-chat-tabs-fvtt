@@ -367,6 +367,7 @@ color: #bbffff !important;
   z-index: 50;
   border-radius: 2px;
   overflow: hidden;
+  display: none;
 }
 
 .mct-load-more-container a {

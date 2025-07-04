@@ -2,6 +2,21 @@ import { MessageFilter } from "./messageFilter.js";
 
 // MultipleChatTabs Class
 export class MultipleChatTabs {
+  static _debouncedCheck = foundry.utils.debounce(this._isLoadable, 100);
+
+  /**
+   * Requests debounce.
+   * @param {jQuery} [scope]
+   * @private
+   */
+  static _requestLoad(scope) {
+    const activeTabId = this.activeFilter;
+    const targetScope = scope || ui.chat.element;
+    if (activeTabId && targetScope) {
+      this._debouncedCheck(activeTabId, targetScope);
+    }
+  }
+
   // Helper to get configured tabs
   static getTabs() {
     const tabString = game.settings.get("multiple-chat-tabs", "tabs");
@@ -89,6 +104,7 @@ export class MultipleChatTabs {
     this.applyFilter(html);
     this._adjustScrollButtonPosition();
     this._scrollActiveTab(html);
+    this._requestLoad(html);
   }
 
   /**
@@ -356,9 +372,7 @@ export class MultipleChatTabs {
     // Debug===================================================
 
     // Loadable check
-    setTimeout(() => {
-      this._isLoadable(clickedFilter, appElement);
-    }, 50);
+    this._requestLoad(appElement);
   }
 
   /**
@@ -803,7 +817,7 @@ export class MultipleChatTabs {
     if (!scope.length) return;
 
     if (MultipleChatTabs.isOverflow(scope) && this._isScrollTop(chatLog)) {
-      this._onScrollTop();
+      this._onScrollTop(scope);
     }
   }
 
@@ -818,29 +832,21 @@ export class MultipleChatTabs {
 
     const SCROLL_THRESHOLD_PERCENT = 0.05;
     const thresholdPx = chatLog[0].clientHeight * SCROLL_THRESHOLD_PERCENT;
-    /*
-    // Debug
-    const currentScrollTop = chatLog.scrollTop();
-    console.log(`[MCT-Debug] _isScrollTop Check:`, {
-      currentScrollTop: currentScrollTop,
-      thresholdPx: thresholdPx,
-      isTop: currentScrollTop <= thresholdPx,
-    });
-    // Debug
-    */
 
     return chatLog.scrollTop() <= thresholdPx;
   }
 
   /**
    * Scroll top event handler
-   * @param {number}
+   * @param {jQuery} scope
    * @private
    */
-  static _onScrollTop() {
+  static _onScrollTop(scope) {
     // Debug
     console.log(`[MCT-Debug] Scrolled near the top!`);
     // Debug
+    // Loadable check
+    this._requestLoad(scope);
   }
 
   /**
@@ -849,6 +855,7 @@ export class MultipleChatTabs {
    */
   static _updateLoaedMessage(mutations) {
     let isLoadMessage = false;
+    let targetElement = null;
 
     for (const mutation of mutations) {
       if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
@@ -864,6 +871,7 @@ export class MultipleChatTabs {
             mutation.target.firstElementChild === addedMessages[0]
           ) {
             isLoadMessage = true;
+            targetElement = mutation.target;
             break;
           }
         }
@@ -877,25 +885,20 @@ export class MultipleChatTabs {
       );
       // Debug
       // Update oldestLoadMessage
-      const windowScopes = [
-        ui.chat.element,
-        ...Object.values(ui.windows)
-          .filter((w) => w.id.startsWith("chat-popout"))
-          .map((w) => w.element),
-      ];
+      const scope = $(targetElement).closest(".app");
+      const windowId = scope.attr("id");
       const activeTabId = this.activeFilter;
 
-      for (const scope of windowScopes) {
-        if (!scope || !activeTabId) continue;
-        const windowId = scope.attr("id");
-        if (!windowId) continue;
-
+      if (windowId && activeTabId) {
         if (!this.oldestLoadMessage[windowId]) {
           this.oldestLoadMessage[windowId] = {};
         }
         this.oldestLoadMessage[windowId][activeTabId] =
           this.getOldestLoadMessage(activeTabId, scope);
       }
+
+      // Loadable check
+      this._requestLoad(scope);
     }
   }
 
@@ -933,7 +936,6 @@ export class MultipleChatTabs {
     const isOverflow = this.isOverflow(scope);
     const chatLog = scope.find("#chat-log");
     const isScrollTop = this._isScrollTop(chatLog);
-
     const autoLoad = game.settings.get(
       "multiple-chat-tabs",
       "auto-load-messages"
@@ -942,6 +944,12 @@ export class MultipleChatTabs {
     // Check message loadable
 
     // Show button or Auto load message
+    const loadButton = scope.find(".mct-load-more-container");
+    if (autoLoad) {
+      loadButton.hide();
+    } else {
+      loadButton.show();
+    }
 
     // Debug
     console.log(`[MCT-Debug] _isLoadable: "${tabLabel}"`, {
