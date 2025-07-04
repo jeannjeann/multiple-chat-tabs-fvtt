@@ -141,9 +141,6 @@ Hooks.on("renderChatLog", async (app, html, data) => {
 
 Hooks.on("renderChatMessage", (message, html, data) => {
   MultipleChatTabs.applyFilterToMessage(html);
-  // Start Debug
-  console.log(`[MCT-Debug] Rendered message:`);
-  // End Debug
 });
 
 Hooks.on("createChatMessage", async (message) => {
