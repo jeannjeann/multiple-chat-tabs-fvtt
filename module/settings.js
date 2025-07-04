@@ -67,7 +67,7 @@ export function registerSettings() {
     name: "MCT.settings.loadBatchSize.name",
     hint: "MCT.settings.loadBatchSize.hint",
     scope: "client",
-    config: true,
+    config: false,
     type: Number,
     range: {
       min: 50,
