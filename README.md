@@ -11,6 +11,27 @@
 
 Separate chats into multiple tabs
 
+## 特徴  Features
+
+- タブを好きなだけ作ることができる
+- タブごとにプレイヤー発言を強制する機能を設定できる
+- タブごとにメッセージ種別のよって強制的に表示する設定ができる
+- タブバーの右クリックで設定へのショートカットができる
+- タブの順番を入れ替えることができる
+- 未読マークまたは未読数付き未読マークを表示することができる
+- ウィスパー用タブを設定できる
+- ウィスパー時に自動的に専用タブを作るよう設定できる
+
+- Can create as many tabs as you like
+- Can set a function to force OOC messagefor each tab
+- Can force display of messages by type for each tab
+- Open settings by right-clicking on the tab bar
+- The order of tabs can be rearranged.
+- Unread mark or unread mark with unread count can be displayed
+- Tabs can be set for whisper message
+- Can be automatically make tab for whisper when whisper message is created
+
+
 ## インストール  Install
 
 ### 方法1  Method 1
