@@ -23,7 +23,7 @@ Separate chats into multiple tabs
 - ウィスパー時に自動的に専用タブを作るよう設定できる
 
 - Can create as many tabs as you like
-- Can set a function to force OOC messagefor each tab
+- Can set a function to force OOC message for each tab
 - Can force display of messages by type for each tab
 - Open settings by right-clicking on the tab bar
 - The order of tabs can be rearranged.
