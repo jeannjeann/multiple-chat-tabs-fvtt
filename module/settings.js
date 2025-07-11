@@ -32,9 +32,7 @@ export function registerSettings() {
     onChange: () => {
       MultipleChatTabs.oldestMessage = {};
       MultipleChatTabs.oldestLoadMessage = {};
-      if (ui.chat && ui.chat.element) {
-        MultipleChatTabs.refreshTabUI(ui.chat.element);
-      }
+      refreshAllTabUI();
     },
   });
 
@@ -46,9 +44,7 @@ export function registerSettings() {
     type: Boolean,
     default: false,
     onChange: () => {
-      if (ui.chat && ui.chat.element) {
-        MultipleChatTabs.refreshTabUI(ui.chat.element);
-      }
+      refreshAllTabUI();
     },
   });
 
@@ -132,9 +128,7 @@ export function registerSettings() {
       MultipleChatTabs.oldestMessage = {};
       MultipleChatTabs.oldestLoadMessage = {};
       setTimeout(() => {
-        if (ui.chat && ui.chat.element) {
-          MultipleChatTabs.refreshTabUI(ui.chat.element);
-        }
+        refreshAllTabUI();
       }, 100);
     },
   });
@@ -146,6 +140,18 @@ export function registerSettings() {
     default: {},
   });
 
+  // Refresh all Tab UI
+  function refreshAllTabUI() {
+    if (ui.chat && ui.chat.element) {
+      MultipleChatTabs.refreshTabUI(ui.chat.element[0]);
+    }
+    Object.values(ui.windows).forEach((app) => {
+      if (app.id.startsWith("chat-popout") && app.element) {
+        MultipleChatTabs.refreshTabUI(app.element[0]);
+      }
+    });
+  }
+
   // libWrapper
   if (game.modules.get("lib-wrapper")?.active) {
     libWrapper.register(
@@ -154,9 +160,9 @@ export function registerSettings() {
       function (wrapped, ...args) {
         wrapped(...args);
         setTimeout(() => {
-          const log = this.element.find("#chat-log");
-          if (log.length) {
-            log.scrollTop(log[0].scrollHeight);
+          const log = this.element[0].querySelector("#chat-log");
+          if (log) {
+            log.scrollTop = log.scrollHeight;
           }
         }, 50);
       },

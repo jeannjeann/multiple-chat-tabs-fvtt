@@ -29,13 +29,14 @@ Hooks.once("ready", function () {
   const debouncedResizeHandler = foundry.utils.debounce(() => {
     if (ui.chat && ui.chat.element) {
       // Main
-      MultipleChatTabs.updateScrollButtons(ui.chat.element);
-      MultipleChatTabs._adjustScrollButtonPosition();
+      const mainChatElement = ui.chat.element[0];
+      MultipleChatTabs.updateScrollButtons(mainChatElement);
+      MultipleChatTabs._adjustScrollButtonPosition(mainChatElement);
       // Update oldestLoadMessage
-      const mainScope = ui.chat.element;
+      const mainScope = mainChatElement;
       const mainTabId = MultipleChatTabs.activeFilter;
       if (mainTabId) {
-        const windowId = mainScope.attr("id");
+        const windowId = mainScope.id;
         if (!MultipleChatTabs.oldestLoadMessage[windowId]) {
           MultipleChatTabs.oldestLoadMessage[windowId] = {};
         }
@@ -49,12 +50,13 @@ Hooks.once("ready", function () {
       Object.values(ui.windows)
         .filter((w) => w.id.startsWith("chat-popout") && w.element)
         .forEach((popout) => {
-          const popoutScope = popout.element;
+          const popoutScope = popout.element[0];
           const popoutTabId = MultipleChatTabs.activeFilter;
           MultipleChatTabs.updateScrollButtons(popoutScope);
+          MultipleChatTabs._adjustScrollButtonPosition(popoutScope);
           // Update oldestLoadMessage
           if (popoutTabId) {
-            const windowId = popoutScope.attr("id");
+            const windowId = popoutScope.id;
             if (!MultipleChatTabs.oldestLoadMessage[windowId]) {
               MultipleChatTabs.oldestLoadMessage[windowId] = {};
             }
@@ -66,7 +68,7 @@ Hooks.once("ready", function () {
         });
     }
   }, 250);
-  $(window).on("resize", debouncedResizeHandler);
+  window.addEventListener("resize", debouncedResizeHandler);
 
   /* Monkey Patch
   // Override scrollBottom
@@ -99,14 +101,15 @@ Hooks.once("ready", function () {
 });
 
 Hooks.on("renderChatLog", async (app, html, data) => {
-  const chatLog = html.find("#chat-log");
-  if (chatLog.length) {
+  const htmlElement = html[0];
+  const chatLog = htmlElement.querySelector("#chat-log");
+  if (chatLog) {
     // Chat scroll listener
     const throttledScrollHandler = foundry.utils.throttle(
       (event) => MultipleChatTabs._onScroll(event),
       200
     );
-    chatLog.on("scroll", throttledScrollHandler);
+    chatLog.addEventListener("scroll", throttledScrollHandler);
 
     // Load message listener
     const debouncedMutationHandler = foundry.utils.debounce(
@@ -114,7 +117,7 @@ Hooks.on("renderChatLog", async (app, html, data) => {
       100
     );
     const observer = new MutationObserver(debouncedMutationHandler);
-    observer.observe(chatLog[0], {
+    observer.observe(chatLog, {
       childList: true,
       subtree: true,
       attributes: true,
@@ -123,9 +126,9 @@ Hooks.on("renderChatLog", async (app, html, data) => {
   }
 
   // Message load button
-  html.find(".mct-load-more-container").remove();
+  htmlElement.querySelector(".mct-load-more-container")?.remove();
 
-  if (chatLog.length) {
+  if (chatLog) {
     const loadButtonHtml = `
         <div class="mct-load-more-container" title="${game.i18n.localize(
           "MCT.tooltips.loadButton"
@@ -133,14 +136,14 @@ Hooks.on("renderChatLog", async (app, html, data) => {
           <a><i class="fa-solid fa-chevron-up"></i></a>
         </div>
       `;
-    chatLog.before(loadButtonHtml);
+    chatLog.insertAdjacentHTML("beforebegin", loadButtonHtml);
   }
 
-  await MultipleChatTabs.refreshTabUI(html);
+  await MultipleChatTabs.refreshTabUI(htmlElement);
 });
 
 Hooks.on("renderChatMessage", (message, html, data) => {
-  MultipleChatTabs.applyFilterToMessage(html);
+  MultipleChatTabs.applyFilterToMessage(html[0]);
 });
 
 Hooks.on("createChatMessage", async (message) => {
@@ -229,14 +232,15 @@ Hooks.on("createChatMessage", async (message) => {
 
       // Set first  oldestLoadMessage
       const windowScopes = [
-        ui.chat.element,
+        ui.chat.element?.[0],
         ...Object.values(ui.windows)
-          .filter((w) => w.id.startsWith("chat-popout"))
-          .map((w) => w.element),
-      ];
+          .filter((w) => w.id.startsWith("chat-popout") && w.element)
+          .map((w) => w.element[0]),
+      ].filter(Boolean); // nullやundefinedを除外
+
       for (const scope of windowScopes) {
         if (!scope) continue;
-        const windowId = scope.attr("id");
+        const windowId = scope.id;
         if (!MultipleChatTabs.oldestLoadMessage[windowId]) {
           MultipleChatTabs.oldestLoadMessage[windowId] = {};
         }
@@ -257,8 +261,15 @@ Hooks.on("createChatMessage", async (message) => {
     }
   }
 
-  if (needsRefresh && ui.chat && ui.chat.element) {
-    await MultipleChatTabs.refreshTabUI(ui.chat.element);
+  if (needsRefresh) {
+    if (ui.chat && ui.chat.element) {
+      await MultipleChatTabs.refreshTabUI(ui.chat.element[0]);
+    }
+    for (const app of Object.values(ui.windows)) {
+      if (app.id.startsWith("chat-popout") && app.element) {
+        await MultipleChatTabs.refreshTabUI(app.element[0]);
+      }
+    }
   }
 
   // Loadable check
@@ -273,14 +284,15 @@ Hooks.on("updateChatMessage", (message, data, options) => {
       MultipleChatTabs.getOldestMessage(activeTabId);
     // Update oldestLoadMessage
     const scopes = [
-      ui.chat.element,
+      ui.chat.element?.[0],
       ...Object.values(ui.windows)
         .filter((w) => w.id.startsWith("chat-popout") && w.element)
-        .map((w) => w.element),
-    ];
+        .map((w) => w.element[0]),
+    ].filter(Boolean);
+
     scopes.forEach((scope) => {
       if (!scope) return;
-      const windowId = scope.attr("id");
+      const windowId = scope.id;
       if (!MultipleChatTabs.oldestLoadMessage[windowId]) {
         MultipleChatTabs.oldestLoadMessage[windowId] = {};
       }
@@ -300,14 +312,15 @@ Hooks.on("deleteChatMessage", (message, options, userId) => {
       MultipleChatTabs.getOldestMessage(activeTabId);
     // Update oldestLoadMessage
     const scopes = [
-      ui.chat.element,
+      ui.chat.element?.[0],
       ...Object.values(ui.windows)
         .filter((w) => w.id.startsWith("chat-popout") && w.element)
-        .map((w) => w.element),
-    ];
+        .map((w) => w.element[0]),
+    ].filter(Boolean);
+
     scopes.forEach((scope) => {
       if (!scope) return;
-      const windowId = scope.attr("id");
+      const windowId = scope.id;
       if (!MultipleChatTabs.oldestLoadMessage[windowId]) {
         MultipleChatTabs.oldestLoadMessage[windowId] = {};
       }
@@ -367,9 +380,9 @@ Hooks.on("preCreateChatMessage", (message, data, options, userId) => {
 
 function _requestCheckAllWin() {
   // Sidebar
-  MultipleChatTabs._requestLoad(ui.chat.element);
+  if (ui.chat.element) MultipleChatTabs._requestLoad(ui.chat.element[0]);
   // Popup
   Object.values(ui.windows)
     .filter((w) => w.id.startsWith("chat-popout") && w.element)
-    .forEach((popout) => MultipleChatTabs._requestLoad(popout.element));
+    .forEach((popout) => MultipleChatTabs._requestLoad(popout.element[0]));
 }

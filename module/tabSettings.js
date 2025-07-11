@@ -36,10 +36,10 @@ export class TabSettings extends FormApplication {
 
   activateListeners(html) {
     super.activateListeners(html);
-    html.find(".add-tab").on("click", this._onAddTab.bind(this));
-    html.find(".reset-settings").on("click", this._onResetSettings.bind(this));
-    html.find(".delete-tab").on("click", this._onDeleteTab.bind(this));
-    html.find(".edit-tab").on("click", this._onEditTab.bind(this));
+    html.on("click", ".add-tab", this._onAddTab.bind(this));
+    html.on("click", ".reset-settings", this._onResetSettings.bind(this));
+    html.on("click", ".delete-tab", this._onDeleteTab.bind(this));
+    html.on("click", ".edit-tab", this._onEditTab.bind(this));
   }
 
   async _onDragStart(event) {
@@ -74,13 +74,13 @@ export class TabSettings extends FormApplication {
       return;
     }
 
-    const draggedElement = this.element.find(
+    const draggedElement = this.form.querySelector(
       `.tab-item[data-tab-id="${data.id}"]`
     );
-    if (!draggedElement.length) return;
+    if (!draggedElement) return;
 
-    const dropTarget = event.currentTarget.closest(".tab-item");
-    if (!dropTarget || dropTarget === draggedElement[0]) return;
+    const dropTarget = event.target.closest(".tab-item");
+    if (!dropTarget || dropTarget === draggedElement) return;
 
     if (dropTarget.dataset.isDefault === "true") {
       ui.notifications.warn(
@@ -89,27 +89,28 @@ export class TabSettings extends FormApplication {
       return;
     }
 
-    dropTarget.before(draggedElement[0]);
+    dropTarget.before(draggedElement);
 
     let tabs = MultipleChatTabs.getTabs();
-    const defaultTab = tabs.find((t) => t.isDefault) || tabs[0];
+    const defaultTab =
+      tabs.find((t) => t.isDefault) || tabs.find((t) => t.id === tabs[0].id);
     const otherTabs = tabs.filter((t) => t.id !== defaultTab.id);
 
     const newOrder = [];
-    this.element
-      .find(".tab-item:not([data-is-default='true'])")
-      .each((i, el) => {
-        const tabId = $(el).data("tab-id");
+    this.form
+      .querySelectorAll(".tab-item:not([data-is-default='true'])")
+      .forEach((el) => {
+        const tabId = el.dataset.tabId;
         const foundTab = otherTabs.find((t) => t.id === tabId);
         if (foundTab) newOrder.push(foundTab);
       });
 
     const finalTabs = [defaultTab, ...newOrder];
 
-    finalTabs.forEach((tab, index) => {
-      tab.isDefault = index === 0;
-      if (!tab.isDefault) delete tab.isDefault;
-    });
+    finalTabs.forEach((tab) => delete tab.isDefault);
+    if (finalTabs.length > 0) {
+      finalTabs[0].isDefault = true;
+    }
 
     await game.settings.set(
       "multiple-chat-tabs",
@@ -183,7 +184,7 @@ export class TabSettings extends FormApplication {
 
   _onEditTab(event) {
     event.preventDefault();
-    const tabId = $(event.currentTarget).closest(".tab-item").data("tabId");
+    const tabId = event.target.closest(".tab-item").dataset.tabId;
     if (tabId) {
       new TabDetailSettings(tabId).render(true);
     }
@@ -191,8 +192,8 @@ export class TabSettings extends FormApplication {
 
   _onDeleteTab(event) {
     event.preventDefault();
-    const tabItem = $(event.currentTarget).closest(".tab-item");
-    const tabId = tabItem.data("tabId");
+    const tabItem = event.target.closest(".tab-item");
+    const tabId = tabItem.dataset.tabId;
     MultipleChatTabs._onDeleteTabRequested(tabId);
   }
 
@@ -254,19 +255,21 @@ export class TabSettings extends FormApplication {
       default: "close",
       render: (html) => {
         // copy ID to clipboard
-        html.find("code").on("click", (ev) => {
-          const target = ev.currentTarget;
-          const text = target.innerText;
-          navigator.clipboard.writeText(text).then(() => {
-            target.style.transition = "background-color 0.1s ease-in-out";
-            target.style.backgroundColor = "var(--color-bg-success)";
-            setTimeout(() => {
-              target.style.backgroundColor = "";
-            }, 300);
+        html[0].querySelectorAll("code").forEach((codeElement) => {
+          codeElement.addEventListener("click", (ev) => {
+            const target = ev.currentTarget;
+            const text = target.innerText;
+            navigator.clipboard.writeText(text).then(() => {
+              target.style.transition = "background-color 0.1s ease-in-out";
+              target.style.backgroundColor = "var(--color-bg-success)";
+              setTimeout(() => {
+                target.style.backgroundColor = "";
+              }, 300);
+            });
+            ui.notifications.info(
+              game.i18n.format("MCT.notifications.idCopied", { id: text })
+            );
           });
-          ui.notifications.info(
-            game.i18n.format("MCT.notifications.idCopied", { id: text })
-          );
         });
       },
     }).render(true);
@@ -277,18 +280,18 @@ export class TabSettings extends FormApplication {
    */
   async _render(force, options) {
     await super._render(force, options);
-    const windowTitle = this.element.find(".window-title");
-    if (windowTitle.length) {
-      windowTitle.find(".mct-scan-tabid").remove();
-      const scanButton = $(
-        `<a class="mct-scan-tabid" title="${game.i18n.localize(
-          "MCT.settings.tooltips.tabIdList"
-        )}">
+    const windowTitle = this.element[0].querySelector(".window-title");
+    if (windowTitle) {
+      windowTitle.querySelector(".mct-scan-tabid")?.remove();
+      const scanButtonHTML = `<a class="mct-scan-tabid" title="${game.i18n.localize(
+        "MCT.settings.tooltips.tabIdList"
+      )}">
            <i class="fa-solid fa-passport"></i>
-         </a>`
-      );
-      windowTitle.append(scanButton);
-      scanButton.on("click", this._onScanTabId.bind(this));
+         </a>`;
+      windowTitle.insertAdjacentHTML("beforeend", scanButtonHTML);
+      windowTitle
+        .querySelector(".mct-scan-tabid")
+        .addEventListener("click", this._onScanTabId.bind(this));
     }
   }
 }
@@ -444,7 +447,8 @@ export class TabDetailSettings extends FormApplication {
           icon: '<i class="fa-solid fa-check"></i>',
           label: game.i18n.localize("OK"),
           callback: async (html) => {
-            const newId = html.find('input[name="newId"]').val().trim();
+            const newIdInput = html[0].querySelector('input[name="newId"]');
+            const newId = newIdInput ? newIdInput.value.trim() : "";
 
             if (!newId) {
               return ui.notifications.warn(
@@ -504,40 +508,45 @@ export class TabDetailSettings extends FormApplication {
     super.activateListeners(html);
 
     // Whisper listener
-    const whisperCheckbox = html.find("#isWhisperTab");
-    const whisperOptions = html.find(".mct-whisper-options");
-    const genericOptions = html.find(".mct-generic-options");
+    const whisperCheckbox = html[0].querySelector("#isWhisperTab");
+    const whisperOptions = html[0].querySelector(".mct-whisper-options");
+    const genericOptions = html[0].querySelector(".mct-generic-options");
 
-    whisperCheckbox.on("change", (event) => {
-      const isChecked = $(event.currentTarget).is(":checked");
+    if (whisperCheckbox) {
+      whisperCheckbox.addEventListener("change", (event) => {
+        const isChecked = event.currentTarget.checked;
 
-      whisperOptions.toggleClass("mct-hidden", !isChecked);
-      genericOptions.toggleClass("mct-disabled", isChecked);
-      const currentlySelectedTargets = whisperOptions.find(
-        "input[name='whisperTargets']:checked"
-      );
+        whisperOptions.classList.toggle("mct-hidden", !isChecked);
+        genericOptions.classList.toggle("mct-disabled", isChecked);
+        const currentlySelectedTargets = whisperOptions.querySelectorAll(
+          "input[name='whisperTargets']:checked"
+        );
 
-      if (isChecked && currentlySelectedTargets.length === 0) {
-        game.users
-          .filter((u) => u.isGM)
-          .forEach((gm) => {
-            whisperOptions
-              .find(`input[value="${gm.id}"]`)
-              .prop("checked", true);
-          });
-      }
-    });
+        if (isChecked && currentlySelectedTargets.length === 0) {
+          game.users
+            .filter((u) => u.isGM)
+            .forEach((gm) => {
+              const gmCheckbox = whisperOptions.querySelector(
+                `input[value="${gm.id}"]`
+              );
+              if (gmCheckbox) gmCheckbox.checked = true;
+            });
+        }
+      });
+    }
 
     // Tab ID listener
-    html
+    const editTabIdButton = html[0]
       .closest(".app")
-      .find(".mct-edit-tabid")
-      .attr(
-        "title",
-        game.i18n.format("MCT.detailSettings.tooltips.tabId", {
+      .querySelector(".mct-edit-tabid");
+    if (editTabIdButton) {
+      editTabIdButton.title = game.i18n.format(
+        "MCT.detailSettings.tooltips.tabId",
+        {
           tabId: this.tabId,
-        })
+        }
       );
+    }
   }
 
   /**
@@ -545,19 +554,18 @@ export class TabDetailSettings extends FormApplication {
    */
   async _render(force, options) {
     await super._render(force, options);
-    const windowTitle = this.element.find(".window-title");
-    if (windowTitle.length) {
-      windowTitle.find(".mct-edit-tabid").remove();
-      const idButton = $(
-        `<a class="mct-edit-tabid" title="${game.i18n.format(
-          "MCT.detailSettings.tooltips.tabId",
-          { tabId: this.tabId }
-        )}">
+    const windowTitle = this.element[0].querySelector(".window-title");
+    if (windowTitle) {
+      windowTitle.querySelector(".mct-edit-tabid")?.remove();
+      const idButtonHTML = `<a class="mct-edit-tabid" title="${game.i18n.format(
+        "MCT.detailSettings.tooltips.tabId",
+        { tabId: this.tabId }
+      )}">
             <i class="fa-solid fa-passport"></i>
-          </a>`
-      );
-      windowTitle.append(idButton);
-      idButton.on("click", this._onEditTabId.bind(this));
+          </a>`;
+      windowTitle.insertAdjacentHTML("beforeend", idButtonHTML);
+      const idButton = windowTitle.querySelector(".mct-edit-tabid");
+      idButton.addEventListener("click", this._onEditTabId.bind(this));
     }
   }
 
