@@ -130,7 +130,7 @@ Hooks.on("renderChatLog", async (app, html, data) => {
         <div class="mct-load-more-container" title="${game.i18n.localize(
           "MCT.tooltips.loadButton"
         )}">
-          <a><i class="fas fa-chevron-up"></i></a>
+          <a><i class="fa-solid fa-chevron-up"></i></a>
         </div>
       `;
     chatLog.before(loadButtonHtml);

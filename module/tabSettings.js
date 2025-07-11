@@ -157,7 +157,7 @@ export class TabSettings extends FormApplication {
       content: `<p>${game.i18n.localize("MCT.dialog.reset.content")}</p>`,
       buttons: {
         ok: {
-          icon: '<i class="fas fa-check"></i>',
+          icon: '<i class="fa-solid fa-check"></i>',
           label: game.i18n.localize("OK"),
           callback: async () => {
             const defaultSettings = game.settings.settings.get(
@@ -172,7 +172,7 @@ export class TabSettings extends FormApplication {
           },
         },
         cancel: {
-          icon: '<i class="fas fa-times"></i>',
+          icon: '<i class="fa-solid fa-times"></i>',
           label: game.i18n.localize("Cancel"),
         },
       },
@@ -247,7 +247,7 @@ export class TabSettings extends FormApplication {
       content: `<div class="mct-tabscan-results">${content}</div>`,
       buttons: {
         close: {
-          icon: '<i class="fas fa-times"></i>',
+          icon: '<i class="fa-solid fa-times"></i>',
           label: game.i18n.localize("Close"),
         },
       },
@@ -284,7 +284,7 @@ export class TabSettings extends FormApplication {
         `<a class="mct-scan-tabid" title="${game.i18n.localize(
           "MCT.settings.tooltips.tabIdList"
         )}">
-           <i class="fas fa-passport"></i>
+           <i class="fa-solid fa-passport"></i>
          </a>`
       );
       windowTitle.append(scanButton);
@@ -441,7 +441,7 @@ export class TabDetailSettings extends FormApplication {
       }" style="flex-basis: 70%;"></div>`,
       buttons: {
         ok: {
-          icon: '<i class="fas fa-check"></i>',
+          icon: '<i class="fa-solid fa-check"></i>',
           label: game.i18n.localize("OK"),
           callback: async (html) => {
             const newId = html.find('input[name="newId"]').val().trim();
@@ -489,7 +489,7 @@ export class TabDetailSettings extends FormApplication {
           },
         },
         cancel: {
-          icon: '<i class="fas fa-times"></i>',
+          icon: '<i class="fa-solid fa-times"></i>',
           label: game.i18n.localize("Cancel"),
         },
       },
@@ -553,7 +553,7 @@ export class TabDetailSettings extends FormApplication {
           "MCT.detailSettings.tooltips.tabId",
           { tabId: this.tabId }
         )}">
-            <i class="fas fa-passport"></i>
+            <i class="fa-solid fa-passport"></i>
           </a>`
       );
       windowTitle.append(idButton);

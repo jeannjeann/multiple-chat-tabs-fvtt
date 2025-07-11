@@ -147,13 +147,13 @@ export class MultipleChatTabs {
         // Menu items
         const menuItems = [];
         menuItems.push(
-          `<li data-action="edit"><i class="fas fa-cog"></i> ${game.i18n.localize(
+          `<li data-action="edit"><i class="fa-solid fa-cog"></i> ${game.i18n.localize(
             "MCT.context.settings"
           )}</li>`
         );
         if (!isDefaultTab) {
           menuItems.push(
-            `<li data-action="delete"><i class="fas fa-trash"></i> ${game.i18n.localize(
+            `<li data-action="delete"><i class="fa-solid fa-trash"></i> ${game.i18n.localize(
               "MCT.context.delete"
             )}</li>`
           );
@@ -235,7 +235,7 @@ export class MultipleChatTabs {
         $(".mct-context-menu").remove();
 
         const menuItems = [
-          `<li data-action="settings"><i class="fas fa-tasks"></i> ${game.i18n.localize(
+          `<li data-action="settings"><i class="fa-solid fa-tasks"></i> ${game.i18n.localize(
             "MCT.context.tabSettings"
           )}</li>`,
         ];
@@ -502,7 +502,7 @@ export class MultipleChatTabs {
       }),
       buttons: {
         delete: {
-          icon: '<i class="fas fa-trash"></i>',
+          icon: '<i class="fa-solid fa-trash"></i>',
           label: game.i18n.localize("Delete"),
           callback: async () => {
             const newTabs = tabs.filter((t) => t.id !== tabId);
@@ -523,7 +523,7 @@ export class MultipleChatTabs {
           },
         },
         cancel: {
-          icon: '<i class="fas fa-times"></i>',
+          icon: '<i class="fa-solid fa-times"></i>',
           label: game.i18n.localize("Cancel"),
         },
       },

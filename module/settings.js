@@ -6,7 +6,7 @@ export function registerSettings() {
   game.settings.registerMenu("multiple-chat-tabs", "tab-settings", {
     name: "MCT.menu.name",
     label: "MCT.menu.label",
-    icon: "fas fa-tasks",
+    icon: "fa-solid fa-tasks",
     type: TabSettings,
     restricted: true,
   });
@@ -152,6 +152,7 @@ export function registerSettings() {
       "multiple-chat-tabs",
       "ChatLog.prototype.scrollBottom",
       function (wrapped, ...args) {
+        wrapped(...args);
         setTimeout(() => {
           const log = this.element.find("#chat-log");
           if (log.length) {
@@ -159,7 +160,7 @@ export function registerSettings() {
           }
         }, 50);
       },
-      "OVERRIDE"
+      "WRAPPER"
     );
   }
 }
