@@ -142,12 +142,22 @@ export function registerSettings() {
 
   // Refresh all Tab UI
   function refreshAllTabUI() {
+    // core version check
+    const api = game.modules.get("multiple-chat-tabs").api;
     if (ui.chat && ui.chat.element) {
-      MultipleChatTabs.refreshTabUI(ui.chat.element[0]);
+      if (api.isV12()) {
+        MultipleChatTabs.refreshTabUI(ui.chat.element[0]);
+      } else {
+        MultipleChatTabs.refreshTabUI(ui.chat.element);
+      }
     }
     Object.values(ui.windows).forEach((app) => {
       if (app.id.startsWith("chat-popout") && app.element) {
-        MultipleChatTabs.refreshTabUI(app.element[0]);
+        if (api.isV12()) {
+          MultipleChatTabs.refreshTabUI(app.element[0]);
+        } else {
+          MultipleChatTabs.refreshTabUI(app.element);
+        }
       }
     });
   }
