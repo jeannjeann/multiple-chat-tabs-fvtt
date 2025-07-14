@@ -34,6 +34,17 @@ Hooks.once("init", async function () {
       new TabDetailSettings(tabId).render(true);
     }
   });
+
+  // hook by core version
+  if (api.isV12()) {
+    Hooks.on("renderChatMessage", (message, html, data) => {
+      MultipleChatTabs.applyFilterToMessage(html[0]);
+    });
+  } else {
+    Hooks.on("renderChatMessageHTML", (message, html, data) => {
+      MultipleChatTabs.applyFilterToMessage(html);
+    });
+  }
 });
 
 /**
@@ -122,6 +133,7 @@ Hooks.once("ready", function () {
 });
 
 Hooks.on("renderChatLog", async (app, html, data) => {
+  if (!html || !html[0]) return;
   const htmlElement = html[0];
   const chatLog = htmlElement.querySelector("#chat-log");
   if (chatLog) {
@@ -161,10 +173,6 @@ Hooks.on("renderChatLog", async (app, html, data) => {
   }
 
   await MultipleChatTabs.refreshTabUI(htmlElement);
-});
-
-Hooks.on("renderChatMessage", (message, html, data) => {
-  MultipleChatTabs.applyFilterToMessage(html[0]);
 });
 
 Hooks.on("createChatMessage", async (message) => {

@@ -154,12 +154,20 @@ export function registerSettings() {
 
   // libWrapper
   if (game.modules.get("lib-wrapper")?.active) {
+    const api = game.modules.get("multiple-chat-tabs").api;
+
+    // core version check
+    const target = api.isV12()
+      ? "ChatLog.prototype.scrollBottom"
+      : "foundry.applications.sidebar.tabs.ChatLog.prototype.scrollBottom";
+
     libWrapper.register(
       "multiple-chat-tabs",
-      "ChatLog.prototype.scrollBottom",
+      target,
       function (wrapped, ...args) {
         wrapped(...args);
         setTimeout(() => {
+          if (!this.element || !this.element[0]) return;
           const log = this.element[0].querySelector("#chat-log");
           if (log) {
             log.scrollTop = log.scrollHeight;
