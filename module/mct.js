@@ -7,6 +7,27 @@ import { MessageFilter } from "./messageFilter.js";
  * Init hook
  */
 Hooks.once("init", async function () {
+  // API
+  const MODULE_ID = "multiple-chat-tabs";
+  game.modules.get(MODULE_ID).api = {
+    // core version check
+    isV12: () => !foundry.utils.isNewerVersion(game.version, 13),
+  };
+
+  // CSS load
+  const api = game.modules.get(MODULE_ID).api;
+  const useV12Css = api.isV12();
+
+  const cssFile = useV12Css
+    ? `modules/${MODULE_ID}/css/v12mct.css`
+    : `modules/${MODULE_ID}/css/mct.css`;
+
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.type = "text/css";
+  link.href = cssFile;
+  document.head.appendChild(link);
+
   // Open detail from context menu
   Hooks.on("mct:requestTabEdit", (tabId) => {
     if (tabId) {

@@ -18,9 +18,7 @@
   "esmodules": [
     "module/mct.js"
   ],
-  "styles": [
-    "css/mct.css"
-  ],
+  "styles": [],
   "languages": [
     {
       "lang": "en",
