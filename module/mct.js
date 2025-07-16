@@ -60,8 +60,15 @@ Hooks.once("setup", function () {
 Hooks.once("ready", function () {
   const debouncedResizeHandler = foundry.utils.debounce(() => {
     if (ui.chat && ui.chat.element) {
-      // Main
-      const mainChatElement = ui.chat.element[0];
+      // core version check
+      let mainChatElement;
+      if (api.isV12()) {
+        mainChatElement = ui.chat.element[0];
+      } else {
+        mainChatElement = ui.chat.element;
+      }
+      if (!mainChatElement) return;
+
       MultipleChatTabs.updateScrollButtons(mainChatElement);
       MultipleChatTabs._adjustScrollButtonPosition(mainChatElement);
       // Update oldestLoadMessage
@@ -82,7 +89,14 @@ Hooks.once("ready", function () {
       Object.values(ui.windows)
         .filter((w) => w.id.startsWith("chat-popout") && w.element)
         .forEach((popout) => {
-          const popoutScope = popout.element[0];
+          // core version check
+          let popoutScope;
+          if (api.isV12()) {
+            popoutScope = popout.element[0];
+          } else {
+            popoutScope = popout.element;
+          }
+          if (!popoutScope) return;
           const popoutTabId = MultipleChatTabs.activeFilter;
           MultipleChatTabs.updateScrollButtons(popoutScope);
           MultipleChatTabs._adjustScrollButtonPosition(popoutScope);
@@ -122,6 +136,20 @@ Hooks.once("ready", function () {
     setTimeout(() => {
       ui.chat.scrollBottom();
     }, 500);
+  }
+
+  // Initial Tabbar
+  if (ui.chat && ui.chat.element) {
+    const api = game.modules.get("multiple-chat-tabs").api;
+    setTimeout(() => {
+      let element;
+      if (api.isV12()) {
+        element = ui.chat.element[0];
+      } else {
+        element = ui.chat.element;
+      }
+      if (element) MultipleChatTabs.refreshTabUI(element);
+    }, 100);
   }
 
   // Initial loadable check
@@ -259,13 +287,27 @@ Hooks.on("createChatMessage", async (message) => {
         { newMessage: message, isFirst: true }
       );
 
-      // Set first  oldestLoadMessage
-      const windowScopes = [
-        ui.chat.element?.[0],
-        ...Object.values(ui.windows)
-          .filter((w) => w.id.startsWith("chat-popout") && w.element)
-          .map((w) => w.element[0]),
-      ].filter(Boolean); // nullやundefinedを除外
+      // Set first oldestLoadMessage
+      const api = game.modules.get("multiple-chat-tabs").api;
+      const windowScopes = [];
+      if (ui.chat.element) {
+        // core version check
+        if (api.isV12()) {
+          windowScopes.push(ui.chat.element[0]);
+        } else {
+          windowScopes.push(ui.chat.element);
+        }
+      }
+      Object.values(ui.windows)
+        .filter((w) => w.id.startsWith("chat-popout") && w.element)
+        .forEach((w) => {
+          // core version check
+          if (api.isV12()) {
+            windowScopes.push(w.element[0]);
+          } else {
+            windowScopes.push(w.element);
+          }
+        });
 
       for (const scope of windowScopes) {
         if (!scope) continue;
@@ -291,12 +333,23 @@ Hooks.on("createChatMessage", async (message) => {
   }
 
   if (needsRefresh) {
+    const api = game.modules.get("multiple-chat-tabs").api;
     if (ui.chat && ui.chat.element) {
-      await MultipleChatTabs.refreshTabUI(ui.chat.element[0]);
+      // core version check
+      if (api.isV12()) {
+        await MultipleChatTabs.refreshTabUI(ui.chat.element[0]);
+      } else {
+        await MultipleChatTabs.refreshTabUI(ui.chat.element);
+      }
     }
     for (const app of Object.values(ui.windows)) {
       if (app.id.startsWith("chat-popout") && app.element) {
-        await MultipleChatTabs.refreshTabUI(app.element[0]);
+        // core version check
+        if (api.isV12()) {
+          await MultipleChatTabs.refreshTabUI(app.element[0]);
+        } else {
+          await MultipleChatTabs.refreshTabUI(app.element);
+        }
       }
     }
   }
@@ -312,12 +365,26 @@ Hooks.on("updateChatMessage", (message, data, options) => {
     MultipleChatTabs.oldestMessage[activeTabId] =
       MultipleChatTabs.getOldestMessage(activeTabId);
     // Update oldestLoadMessage
-    const scopes = [
-      ui.chat.element?.[0],
-      ...Object.values(ui.windows)
-        .filter((w) => w.id.startsWith("chat-popout") && w.element)
-        .map((w) => w.element[0]),
-    ].filter(Boolean);
+    const api = game.modules.get("multiple-chat-tabs").api;
+    const scopes = [];
+    if (ui.chat.element) {
+      // core version check
+      if (api.isV12()) {
+        scopes.push(ui.chat.element[0]);
+      } else {
+        scopes.push(ui.chat.element);
+      }
+    }
+    Object.values(ui.windows)
+      .filter((w) => w.id.startsWith("chat-popout") && w.element)
+      .forEach((w) => {
+        // core version check
+        if (api.isV12()) {
+          scopes.push(w.element[0]);
+        } else {
+          scopes.push(w.element);
+        }
+      });
 
     scopes.forEach((scope) => {
       if (!scope) return;
@@ -340,12 +407,26 @@ Hooks.on("deleteChatMessage", (message, options, userId) => {
     MultipleChatTabs.oldestMessage[activeTabId] =
       MultipleChatTabs.getOldestMessage(activeTabId);
     // Update oldestLoadMessage
-    const scopes = [
-      ui.chat.element?.[0],
-      ...Object.values(ui.windows)
-        .filter((w) => w.id.startsWith("chat-popout") && w.element)
-        .map((w) => w.element[0]),
-    ].filter(Boolean);
+    const api = game.modules.get("multiple-chat-tabs").api;
+    const scopes = [];
+    if (ui.chat.element) {
+      // core version check
+      if (api.isV12()) {
+        scopes.push(ui.chat.element[0]);
+      } else {
+        scopes.push(ui.chat.element);
+      }
+    }
+    Object.values(ui.windows)
+      .filter((w) => w.id.startsWith("chat-popout") && w.element)
+      .forEach((w) => {
+        // core version check
+        if (api.isV12()) {
+          scopes.push(w.element[0]);
+        } else {
+          scopes.push(w.element);
+        }
+      });
 
     scopes.forEach((scope) => {
       if (!scope) return;
@@ -408,10 +489,29 @@ Hooks.on("preCreateChatMessage", (message, data, options, userId) => {
 });
 
 function _requestCheckAllWin() {
+  const api = game.modules.get("multiple-chat-tabs").api;
   // Sidebar
-  if (ui.chat.element) MultipleChatTabs._requestLoad(ui.chat.element[0]);
+  if (ui.chat.element) {
+    // core version check
+    let element;
+    if (api.isV12()) {
+      element = ui.chat.element[0];
+    } else {
+      element = ui.chat.element;
+    }
+    if (element) MultipleChatTabs._requestLoad(element);
+  }
   // Popup
   Object.values(ui.windows)
     .filter((w) => w.id.startsWith("chat-popout") && w.element)
-    .forEach((popout) => MultipleChatTabs._requestLoad(popout.element[0]));
+    .forEach((popout) => {
+      // core version check
+      let element;
+      if (api.isV12()) {
+        element = popout.element[0];
+      } else {
+        element = popout.element;
+      }
+      if (element) MultipleChatTabs._requestLoad(element);
+    });
 }

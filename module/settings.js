@@ -177,8 +177,16 @@ export function registerSettings() {
       function (wrapped, ...args) {
         wrapped(...args);
         setTimeout(() => {
-          if (!this.element || !this.element[0]) return;
-          const log = this.element[0].querySelector("#chat-log");
+          // core version check
+          if (!this.element) return;
+          let nativeElement;
+          if (this.element instanceof HTMLElement) {
+            nativeElement = this.element;
+          } else {
+            nativeElement = this.element[0];
+          }
+          if (!nativeElement) return;
+          const log = nativeElement.querySelector("#chat-log");
           if (log) {
             log.scrollTop = log.scrollHeight;
           }

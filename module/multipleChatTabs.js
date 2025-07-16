@@ -40,10 +40,28 @@ export class MultipleChatTabs {
    * @param {HTMLElement} html
    */
   static async refreshTabUI(html) {
+    // Start DEBUG
+    console.log(
+      "%c[MCT-Debug] 1. refreshTabUI called",
+      "color: lightblue; font-weight: bold;"
+    );
+    if (html) {
+      console.log("  - 'html' argument is:", html);
+      console.log(
+        `  - 'html' tag is: <${html.tagName.toLowerCase()} id="${
+          html.id
+        }" class="${html.className}">`
+      );
+    } else {
+      console.error("  - 'html' argument is UNDEFINED or NULL!");
+    }
+    // End DEBUG
+
     html.querySelector(".mct-container")?.remove();
 
     let tabs = this.getTabs();
     const currentUser = game.user;
+    const api = game.modules.get("multiple-chat-tabs").api;
 
     // Whisper tab filter
     tabs = tabs.filter((tab) => {
@@ -91,12 +109,29 @@ export class MultipleChatTabs {
     }));
     const isGM = game.user.isGM;
 
-    const tabsHtml = await renderTemplate(
-      "modules/multiple-chat-tabs/templates/chat-tabs.hbs",
-      { tabs: processedTabs, showCount: showCount, isGM: isGM }
-    );
-    const chatLog = html.querySelector("#chat-log");
-    chatLog?.insertAdjacentHTML("afterend", tabsHtml);
+    // core version check
+    let tabsHtml;
+    if (api.isV12()) {
+      tabsHtml = await renderTemplate(
+        "modules/multiple-chat-tabs/templates/chat-tabs.hbs",
+        { tabs: processedTabs, showCount: showCount, isGM: isGM }
+      );
+    } else {
+      tabsHtml = await foundry.applications.handlebars.renderTemplate(
+        "modules/multiple-chat-tabs/templates/chat-tabs.hbs",
+        { tabs: processedTabs, showCount: showCount, isGM: isGM }
+      );
+    }
+
+    // core version check
+    if (api.isV12()) {
+      const chatLog = html.querySelector("#chat-log");
+      chatLog?.insertAdjacentHTML("afterend", tabsHtml);
+    } else {
+      const chatForm = html.querySelector(".chat-form");
+      chatForm?.insertAdjacentHTML("beforebegin", tabsHtml);
+    }
+
     html
       .querySelector(`.item[data-filter="${this.activeFilter}"]`)
       ?.classList.add("active");
@@ -115,7 +150,35 @@ export class MultipleChatTabs {
    * @private
    */
   static _activateTabListeners(html) {
-    html.addEventListener("click", (event) => {
+    // Start DEBUG
+    console.log(
+      "%c[MCT-Debug] 2. _activateTabListeners called",
+      "color: lightgreen; font-weight: bold;"
+    );
+    if (html) {
+      console.log("  - 'html' argument to search within is:", html);
+
+      const container = html.querySelector(".mct-container");
+
+      if (container) {
+        console.log("  - SUCCESS: .mct-container was found!", container);
+      } else {
+        console.error(
+          "  - FAILURE: .mct-container was NOT FOUND inside 'html'."
+        );
+        console.log(
+          "  - HTML content of 'html' at this moment:",
+          html.innerHTML
+        );
+      }
+    } else {
+      console.error("  - 'html' argument itself is null or undefined.");
+    }
+    // End DEBUG
+    const container = html.querySelector(".mct-container");
+    if (!container) return;
+
+    container.addEventListener("click", (event) => {
       const target = event.target;
       const tabItem = target.closest(".multiple-chat-tabs-nav .item");
       const addTabBtn = target.closest(".add-tab-btn");
@@ -128,18 +191,16 @@ export class MultipleChatTabs {
       } else if (addTabBtn) {
         this._onAddTabClick(event);
       } else if (scrollBtn) {
-        const scroller = html.querySelector(".mct-scroller");
+        const scroller = container.querySelector(".mct-scroller");
         if (!scroller) return;
         const direction = scrollBtn.classList.contains("left") ? -1 : 1;
         const scrollAmount = scroller.clientWidth * 0.7;
         scroller.scrollLeft += scrollAmount * direction;
       } else if (loadMoreLink) {
-        event.preventDefault();
-        this.loadMessage({ scope: html });
       }
     });
 
-    html.addEventListener("contextmenu", (event) => {
+    container.addEventListener("contextmenu", (event) => {
       const target = event.target;
       const tabItem = target.closest(".multiple-chat-tabs-nav .item");
       const addTabBtn = target.closest(".add-tab-btn");
@@ -152,10 +213,12 @@ export class MultipleChatTabs {
     });
 
     // Tabbar scroll listener
-    const scroller = html.querySelector(".mct-scroller");
+    const scroller = container.querySelector(".mct-scroller");
     if (scroller) {
-      this.updateScrollButtons(html);
-      scroller.addEventListener("scroll", () => this.updateScrollButtons(html));
+      this.updateScrollButtons(container);
+      scroller.addEventListener("scroll", () =>
+        this.updateScrollButtons(container)
+      );
       scroller.addEventListener("wheel", (event) => {
         event.preventDefault();
         const delta = event.deltaX || event.deltaY;
@@ -374,20 +437,33 @@ export class MultipleChatTabs {
 
   /**
    * Tab scroll
-   * @param {HTMLElement} html
+   * @param {HTMLElement} container
    */
-  static updateScrollButtons(html) {
-    const scroller = html.querySelector(".mct-scroller");
+  static updateScrollButtons(container) {
+    if (!container) return;
+    const scroller = container.querySelector(".mct-scroller");
     if (!scroller) return;
 
     const scrollLeft = scroller.scrollLeft;
     const scrollWidth = scroller.scrollWidth;
     const clientWidth = scroller.clientWidth;
+    // Start DEBUG
+    console.log(
+      `%c[MCT-Debug] updateScrollButtons`,
+      "color: orange; font-weight: bold;",
+      {
+        scrollLeft: scrollLeft,
+        scrollWidth: scrollWidth,
+        clientWidth: clientWidth,
+        isOverflowing: scrollWidth > clientWidth,
+      }
+    );
+    // End DEBUG
 
-    const leftBtn = html.querySelector(".scroll-btn.left");
+    const leftBtn = container.querySelector(".scroll-btn.left");
     if (leftBtn) leftBtn.style.display = scrollLeft > 0 ? "" : "none";
 
-    const rightBtn = html.querySelector(".scroll-btn.right");
+    const rightBtn = container.querySelector(".scroll-btn.right");
     if (rightBtn)
       rightBtn.style.display =
         scrollWidth - clientWidth - scrollLeft > 1 ? "" : "none";
@@ -402,16 +478,19 @@ export class MultipleChatTabs {
     const container = scope || (ui.chat.element ? ui.chat.element[0] : null);
     if (!container) return;
 
-    const scrollerEl = container.querySelector(".mct-scroller");
-    const activeTabEl = container.querySelector(
+    const mctContainer = container.querySelector(".mct-container");
+    if (!mctContainer) return;
+
+    const scrollerEl = mctContainer.querySelector(".mct-scroller");
+    const activeTabEl = mctContainer.querySelector(
       ".multiple-chat-tabs-nav .item.active"
     );
     if (!scrollerEl || !activeTabEl) return;
 
     const scrollerRect = scrollerEl.getBoundingClientRect();
     const activeTabRect = activeTabEl.getBoundingClientRect();
-    const leftBtn = container.querySelector(".scroll-btn.left");
-    const rightBtn = container.querySelector(".scroll-btn.right");
+    const leftBtn = mctContainer.querySelector(".scroll-btn.left");
+    const rightBtn = mctContainer.querySelector(".scroll-btn.right");
     const leftButtonWidth =
       leftBtn && leftBtn.style.display !== "none" ? leftBtn.offsetWidth : 0;
     const rightButtonWidth =
