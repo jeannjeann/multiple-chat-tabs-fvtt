@@ -161,8 +161,8 @@ Hooks.once("ready", function () {
 });
 
 Hooks.on("renderChatLog", async (app, html, data) => {
-  if (!html || !html[0]) return;
-  const htmlElement = html[0];
+  const htmlElement = html?.jquery ? html[0] : html;
+  if (!htmlElement) return;
   const chatLog = htmlElement.querySelector("#chat-log");
   if (chatLog) {
     // Chat scroll listener

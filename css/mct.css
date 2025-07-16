@@ -392,3 +392,8 @@ color: #bbffff !important;
   color: var(--color-border-highlight);
   text-shadow: 0 0 8px var(--color-shadow-primary);
 }
+
+#chat-popout {
+  height: 80%;
+}
+

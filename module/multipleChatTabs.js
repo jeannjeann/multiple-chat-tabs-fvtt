@@ -46,24 +46,29 @@ export class MultipleChatTabs {
     const currentUser = game.user;
     const api = game.modules.get("multiple-chat-tabs").api;
 
-    // Whisper tab filter
+    // Whisper tabs filter
     tabs = tabs.filter((tab) => {
-      if (!tab.isWhisperTab) {
-        return true;
-      }
+      if (!tab.isWhisperTab) return true;
       return tab.whisperTargets?.includes(currentUser.id);
     });
 
     if (tabs.length === 0) {
-      html
-        .querySelectorAll("#chat-log .message")
-        .forEach((el) => (el.style.display = ""));
+      const messageContainer = html.querySelector("ol.chat-log, #chat-log");
+      if (messageContainer) {
+        messageContainer
+          .querySelectorAll(".message")
+          .forEach((el) => (el.style.display = ""));
+      }
       if (ui.chat) ui.chat.scrollBottom();
       return;
     }
-    if (!tabs.some((t) => t.id === this.activeFilter)) {
-      this.activeFilter = tabs[0]?.id || null;
+
+    let activeFilter = html.dataset.activeFilter || this.activeFilter;
+    if (!tabs.some((t) => t.id === activeFilter)) {
+      activeFilter = tabs[0]?.id || null;
     }
+    html.dataset.activeFilter = activeFilter;
+    this.activeFilter = activeFilter;
 
     // Initialize default tab's property
     const initialActiveTabId = this.activeFilter;
@@ -112,11 +117,16 @@ export class MultipleChatTabs {
       chatLog?.insertAdjacentHTML("afterend", tabsHtml);
     } else {
       const chatForm = html.querySelector(".chat-form");
-      chatForm?.insertAdjacentHTML("beforebegin", tabsHtml);
+      if (chatForm) {
+        chatForm.insertAdjacentHTML("beforebegin", tabsHtml);
+      } else {
+        const messageContainer = html.querySelector("ol.chat-log");
+        messageContainer?.insertAdjacentHTML("beforebegin", tabsHtml);
+      }
     }
 
     html
-      .querySelector(`.item[data-filter="${this.activeFilter}"]`)
+      .querySelector(`.item[data-filter="${activeFilter}"]`)
       ?.classList.add("active");
 
     // Activate listener
@@ -353,31 +363,27 @@ export class MultipleChatTabs {
     const clickedTab = event.target.closest(".item");
     if (!clickedTab) return;
 
-    // core version check
-    const api = game.modules.get("multiple-chat-tabs").api;
-    let appElement;
-    if (api.isV12()) {
-      appElement = clickedTab.closest(".app");
-    } else {
-      appElement = clickedTab.closest("#chat, .chat-popout");
-    }
+    const appElement = clickedTab.closest(".window-app, #chat, #chat-popout");
     if (!appElement) return;
 
+    const nativeAppElement = appElement.jquery ? appElement[0] : appElement;
     const clickedFilter = clickedTab.dataset.filter;
 
-    if (MultipleChatTabs.activeFilter === clickedFilter) return;
+    if (nativeAppElement.dataset.activeFilter === clickedFilter) return;
 
-    appElement
+    nativeAppElement
       .querySelector(".multiple-chat-tabs-nav .item.active")
       ?.classList.remove("active");
     clickedTab.classList.add("active");
+
+    nativeAppElement.dataset.activeFilter = clickedFilter;
     MultipleChatTabs.activeFilter = clickedFilter;
 
-    this.applyFilter(appElement);
-    this._scrollActiveTab(appElement);
+    this.applyFilter(nativeAppElement);
+    this._scrollActiveTab(nativeAppElement);
 
     // Update oldestMessage
-    const windowId = appElement.id;
+    const windowId = nativeAppElement.id;
     if (!this.oldestMessage[clickedFilter]) {
       this.oldestMessage[clickedFilter] = this.getOldestMessage(clickedFilter);
     }
@@ -388,7 +394,7 @@ export class MultipleChatTabs {
     // Update oldestLoadMessage
     this.oldestLoadMessage[windowId][clickedFilter] = this.getOldestLoadMessage(
       clickedFilter,
-      appElement
+      nativeAppElement
     );
 
     // Reset unread count
@@ -398,7 +404,22 @@ export class MultipleChatTabs {
     }
 
     // Loadable check
-    this._requestLoad(appElement);
+    this._requestLoad(nativeAppElement);
+
+    // Scroll bottom
+    let chatApp = null;
+
+    if (nativeAppElement.id.startsWith("chat-popout")) {
+      chatApp = Object.values(ui.windows).find(
+        (app) => app.id === nativeAppElement.id
+      );
+    } else if (nativeAppElement.id === "chat") {
+      chatApp = ui.chat;
+    }
+
+    if (chatApp && typeof chatApp.scrollBottom === "function") {
+      chatApp.scrollBottom();
+    }
   }
 
   /**
@@ -586,33 +607,28 @@ export class MultipleChatTabs {
    * @param {boolean} [options.scroll=true]
    */
   static applyFilter(scope, { scroll = true } = {}) {
+    // core version check
     const api = game.modules.get("multiple-chat-tabs").api;
     let messageContainer;
-
-    // core version check
     if (api.isV12()) {
       messageContainer = scope.querySelector("#chat-log");
     } else {
       messageContainer = scope.querySelector("ol.chat-log");
     }
-
     if (!messageContainer) return;
 
+    const activeFilter = scope.dataset.activeFilter;
     const messages = messageContainer.querySelectorAll(".message");
     messages.forEach((el) => {
-      this.applyFilterToMessage(el);
+      this.applyFilterToMessage(el, activeFilter);
     });
 
-    if (scroll && ui.chat) {
-      ui.chat.scrollBottom();
-    }
-
     // Scroll bottom button refresh
-    const chat = scope
-      ? Object.values(ui.windows).find(
-          (w) => w.element && w.element[0] === scope
-        ) ?? ui.chat
-      : ui.chat;
+    const nativeScope = scope.jquery ? scope[0] : scope;
+    const chat =
+      Object.values(ui.windows).find(
+        (w) => (w.element.jquery ? w.element[0] : w.element) === nativeScope
+      ) || (ui.chat.element[0] === nativeScope ? ui.chat : null);
     if (chat && typeof chat._onScrollLog === "function") {
       const fakeEvent = {
         currentTarget: messageContainer,
@@ -625,16 +641,13 @@ export class MultipleChatTabs {
   /**
    * Filtering message
    * @param {HTMLElement} messageElement
-   */
-  static applyFilterToMessage(messageElement) {
+   * @param {string} activeFilter
+   *   */
+  static applyFilterToMessage(messageElement, activeFilter) {
     const allTabs = this.getTabs();
     const message = game.messages.get(messageElement.dataset.messageId);
 
-    const show = MessageFilter.filterMessage(
-      message,
-      allTabs,
-      this.activeFilter
-    );
+    const show = MessageFilter.filterMessage(message, allTabs, activeFilter);
 
     messageElement.style.display = show ? "" : "none";
   }
