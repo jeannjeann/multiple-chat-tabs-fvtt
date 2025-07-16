@@ -40,23 +40,6 @@ export class MultipleChatTabs {
    * @param {HTMLElement} html
    */
   static async refreshTabUI(html) {
-    // Start DEBUG
-    console.log(
-      "%c[MCT-Debug] 1. refreshTabUI called",
-      "color: lightblue; font-weight: bold;"
-    );
-    if (html) {
-      console.log("  - 'html' argument is:", html);
-      console.log(
-        `  - 'html' tag is: <${html.tagName.toLowerCase()} id="${
-          html.id
-        }" class="${html.className}">`
-      );
-    } else {
-      console.error("  - 'html' argument is UNDEFINED or NULL!");
-    }
-    // End DEBUG
-
     html.querySelector(".mct-container")?.remove();
 
     let tabs = this.getTabs();
@@ -150,31 +133,6 @@ export class MultipleChatTabs {
    * @private
    */
   static _activateTabListeners(html) {
-    // Start DEBUG
-    console.log(
-      "%c[MCT-Debug] 2. _activateTabListeners called",
-      "color: lightgreen; font-weight: bold;"
-    );
-    if (html) {
-      console.log("  - 'html' argument to search within is:", html);
-
-      const container = html.querySelector(".mct-container");
-
-      if (container) {
-        console.log("  - SUCCESS: .mct-container was found!", container);
-      } else {
-        console.error(
-          "  - FAILURE: .mct-container was NOT FOUND inside 'html'."
-        );
-        console.log(
-          "  - HTML content of 'html' at this moment:",
-          html.innerHTML
-        );
-      }
-    } else {
-      console.error("  - 'html' argument itself is null or undefined.");
-    }
-    // End DEBUG
     const container = html.querySelector(".mct-container");
     if (!container) return;
 
@@ -394,7 +352,15 @@ export class MultipleChatTabs {
   static async _onTabClick(event) {
     const clickedTab = event.target.closest(".item");
     if (!clickedTab) return;
-    const appElement = clickedTab.closest(".app");
+
+    // core version check
+    const api = game.modules.get("multiple-chat-tabs").api;
+    let appElement;
+    if (api.isV12()) {
+      appElement = clickedTab.closest(".app");
+    } else {
+      appElement = clickedTab.closest("#chat, .chat-popout");
+    }
     if (!appElement) return;
 
     const clickedFilter = clickedTab.dataset.filter;
@@ -447,18 +413,6 @@ export class MultipleChatTabs {
     const scrollLeft = scroller.scrollLeft;
     const scrollWidth = scroller.scrollWidth;
     const clientWidth = scroller.clientWidth;
-    // Start DEBUG
-    console.log(
-      `%c[MCT-Debug] updateScrollButtons`,
-      "color: orange; font-weight: bold;",
-      {
-        scrollLeft: scrollLeft,
-        scrollWidth: scrollWidth,
-        clientWidth: clientWidth,
-        isOverflowing: scrollWidth > clientWidth,
-      }
-    );
-    // End DEBUG
 
     const leftBtn = container.querySelector(".scroll-btn.left");
     if (leftBtn) leftBtn.style.display = scrollLeft > 0 ? "" : "none";
@@ -632,12 +586,19 @@ export class MultipleChatTabs {
    * @param {boolean} [options.scroll=true]
    */
   static applyFilter(scope, { scroll = true } = {}) {
-    const chatLog = scope
-      ? scope.querySelector("#chat-log")
-      : document.querySelector("#chat-log");
-    if (!chatLog) return;
+    const api = game.modules.get("multiple-chat-tabs").api;
+    let messageContainer;
 
-    const messages = chatLog.querySelectorAll(".message");
+    // core version check
+    if (api.isV12()) {
+      messageContainer = scope.querySelector("#chat-log");
+    } else {
+      messageContainer = scope.querySelector("ol.chat-log");
+    }
+
+    if (!messageContainer) return;
+
+    const messages = messageContainer.querySelectorAll(".message");
     messages.forEach((el) => {
       this.applyFilterToMessage(el);
     });
@@ -653,7 +614,10 @@ export class MultipleChatTabs {
         ) ?? ui.chat
       : ui.chat;
     if (chat && typeof chat._onScrollLog === "function") {
-      const fakeEvent = { currentTarget: chatLog, target: chatLog };
+      const fakeEvent = {
+        currentTarget: messageContainer,
+        target: messageContainer,
+      };
       chat._onScrollLog(fakeEvent);
     }
   }
