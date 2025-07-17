@@ -38,11 +38,18 @@ Hooks.once("init", async function () {
   // hook by core version
   if (api.isV12()) {
     Hooks.on("renderChatMessage", (message, html, data) => {
-      MultipleChatTabs.applyFilterToMessage(html[0]);
+      const htmlElement = html[0] || html;
+      MultipleChatTabs.applyFilterToMessage(
+        htmlElement,
+        MultipleChatTabs.activeFilter
+      );
     });
   } else {
     Hooks.on("renderChatMessageHTML", (message, html, data) => {
-      MultipleChatTabs.applyFilterToMessage(html);
+      MultipleChatTabs.applyFilterToMessage(
+        html,
+        MultipleChatTabs.activeFilter
+      );
     });
   }
 });
