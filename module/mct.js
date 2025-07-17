@@ -58,6 +58,8 @@ Hooks.once("setup", function () {
  * Ready hook
  */
 Hooks.once("ready", function () {
+  const MODULE_ID = "multiple-chat-tabs";
+  const api = game.modules.get(MODULE_ID).api;
   const debouncedResizeHandler = foundry.utils.debounce(() => {
     if (ui.chat && ui.chat.element) {
       // core version check
@@ -138,6 +140,29 @@ Hooks.once("ready", function () {
     }, 500);
   }
 
+  // Initial ResizeObserver
+  MultipleChatTabs.resizeObserver = new ResizeObserver((entries) => {
+    debouncedResizeHandler();
+  });
+
+  if (ui.chat && ui.chat.element) {
+    if (api.isV12()) {
+      MultipleChatTabs.resizeObserver.observe(ui.chat.element[0]);
+    } else {
+      MultipleChatTabs.resizeObserver.observe(ui.chat.element);
+    }
+  }
+
+  Object.values(ui.windows)
+    .filter((w) => w.id.startsWith("chat-popout") && w.element)
+    .forEach((popout) => {
+      if (api.isV12()) {
+        MultipleChatTabs.resizeObserver.observe(popout.element[0]);
+      } else {
+        MultipleChatTabs.resizeObserver.observe(popout.element);
+      }
+    });
+
   // Initial Tabbar
   if (ui.chat && ui.chat.element) {
     const api = game.modules.get("multiple-chat-tabs").api;
@@ -161,6 +186,8 @@ Hooks.once("ready", function () {
 });
 
 Hooks.on("renderChatLog", async (app, html, data) => {
+  const MODULE_ID = "multiple-chat-tabs";
+  const api = game.modules.get(MODULE_ID).api;
   const htmlElement = html?.jquery ? html[0] : html;
   if (!htmlElement) return;
   const chatLog = htmlElement.querySelector("#chat-log");
@@ -184,6 +211,15 @@ Hooks.on("renderChatLog", async (app, html, data) => {
       attributes: true,
       characterData: true,
     });
+  }
+
+  // Observe popout
+  if (MultipleChatTabs.resizeObserver) {
+    if (api.isV12()) {
+      MultipleChatTabs.resizeObserver.observe(html[0]);
+    } else {
+      MultipleChatTabs.resizeObserver.observe(html);
+    }
   }
 
   // Message load button
@@ -486,6 +522,24 @@ Hooks.on("preCreateChatMessage", (message, data, options, userId) => {
     }
   }
   message.updateSource(updateData);
+});
+
+Hooks.on("closeChatPopout", (app) => {
+  const api = game.modules.get("multiple-chat-tabs").api;
+  if (MultipleChatTabs.resizeObserver && api.isV12()) {
+    if (app.element && app.element[0]) {
+      MultipleChatTabs.resizeObserver.unobserve(app.element[0]);
+    }
+  }
+});
+
+Hooks.on("closeApplication", (app) => {
+  const api = game.modules.get("multiple-chat-tabs").api;
+  if (MultipleChatTabs.resizeObserver && !api.isV12()) {
+    if (app.id.startsWith("chat-popout") && app.element) {
+      MultipleChatTabs.resizeObserver.unobserve(app.element);
+    }
+  }
 });
 
 function _requestCheckAllWin() {

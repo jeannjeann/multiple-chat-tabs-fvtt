@@ -3,6 +3,7 @@ import { MessageFilter } from "./messageFilter.js";
 // MultipleChatTabs Class
 export class MultipleChatTabs {
   static _debouncedCheck = foundry.utils.debounce(this._isLoadable, 100);
+  static resizeObserver = null;
 
   /**
    * Requests debounce.
