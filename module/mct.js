@@ -197,6 +197,11 @@ Hooks.on("renderChatLog", async (app, html, data) => {
   const api = game.modules.get(MODULE_ID).api;
   const htmlElement = html?.jquery ? html[0] : html;
   if (!htmlElement) return;
+
+  if (app.id.startsWith("chat-popout")) {
+    MultipleChatTabs.popoutChatApps[htmlElement.id] = app;
+  }
+
   const chatLog = htmlElement.querySelector("#chat-log");
   if (chatLog) {
     // Chat scroll listener
@@ -538,6 +543,13 @@ Hooks.on("closeChatPopout", (app) => {
       MultipleChatTabs.resizeObserver.unobserve(app.element[0]);
     }
   }
+  if (
+    app.element &&
+    app.element[0] &&
+    MultipleChatTabs.popoutChatApps[app.element[0].id]
+  ) {
+    delete MultipleChatTabs.popoutChatApps[app.element[0].id];
+  }
 });
 
 Hooks.on("closeApplication", (app) => {
@@ -546,6 +558,13 @@ Hooks.on("closeApplication", (app) => {
     if (app.id.startsWith("chat-popout") && app.element) {
       MultipleChatTabs.resizeObserver.unobserve(app.element);
     }
+  }
+  if (
+    app.id.startsWith("chat-popout") &&
+    app.element &&
+    MultipleChatTabs.popoutChatApps[app.element.id]
+  ) {
+    delete MultipleChatTabs.popoutChatApps[app.element.id];
   }
 });
 

@@ -4,6 +4,7 @@ import { MessageFilter } from "./messageFilter.js";
 export class MultipleChatTabs {
   static _debouncedCheck = foundry.utils.debounce(this._isLoadable, 100);
   static resizeObserver = null;
+  static popoutChatApps = {};
 
   /**
    * Requests debounce.
@@ -411,9 +412,7 @@ export class MultipleChatTabs {
     let chatApp = null;
 
     if (nativeAppElement.id.startsWith("chat-popout")) {
-      chatApp = Object.values(ui.windows).find(
-        (app) => app.id === nativeAppElement.id
-      );
+      chatApp = MultipleChatTabs.popoutChatApps[nativeAppElement.id];
     } else if (nativeAppElement.id === "chat") {
       chatApp = ui.chat;
     }
