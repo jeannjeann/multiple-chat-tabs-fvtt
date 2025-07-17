@@ -175,24 +175,8 @@ export function registerSettings() {
       "multiple-chat-tabs",
       target,
       function (wrapped, ...args) {
-        // start Debug
-        console.log(
-          `%c[MCT-Debug] 3. libWrapper Executed | Instance ID: ${this.id}`,
-          "background: #222; color: #ff00ff;"
-        );
-        // end Debug
         wrapped(...args);
         setTimeout(() => {
-          // start Debug
-          const location = this.element?.closest("#sidebar")
-            ? "Sidebar"
-            : "Popout or Other";
-          console.log(
-            `%c[MCT-Debug] libWrapper: scrollBottom patch executed.`,
-            "color: #f5a623;",
-            `Location: ${location}`
-          );
-          // end Debug
           // core version check
           if (!this.element) return;
           let nativeElement;
