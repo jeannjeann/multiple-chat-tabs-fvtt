@@ -23,7 +23,7 @@ Separate chats into multiple tabs
 - ウィスパー時に自動的に専用タブを作るよう設定できる
 
 - Can create as many tabs as you like
-- Can set a function to force OOC messagefor each tab
+- Can set a function to force OOC message for each tab
 - Can force display of messages by type for each tab
 - Open settings by right-clicking on the tab bar
 - The order of tabs can be rearranged.
@@ -53,12 +53,16 @@ In 'Install Module' window of Foundry VTT's 'Add-on Modules', paste the above 'M
 - 「Simple Message Window」モジュールと一緒にテキストセッションのお供にどうぞ！
 - リサイズ系のモジュールと組み合わせて使うとより便利ですよ。
   - 「Sidebar and Window Resizer」「Popout!」「Popout Resizer（module.json改変必要）」など。
-- v13にはいずれ対応したいですが、v11に対応予定はありません。
+- v13に対応（一部警告は残存）、v11に対応予定はありません。
 - ログの量があまりに大きいとパフォーマンスに悪影響が出る可能性があります。
 - タブ対応の簡易的なチャットログ出力機能も追加したいですが、未定です。
 
 
 # CHANGELOG
+
+## 1.1.0
+- support v13
+- bug fix
 
 ## 1.0.0
 - first release

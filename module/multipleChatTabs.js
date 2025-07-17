@@ -3,15 +3,17 @@ import { MessageFilter } from "./messageFilter.js";
 // MultipleChatTabs Class
 export class MultipleChatTabs {
   static _debouncedCheck = foundry.utils.debounce(this._isLoadable, 100);
+  static resizeObserver = null;
+  static popoutChatApps = {};
 
   /**
    * Requests debounce.
-   * @param {jQuery} [scope]
+   * @param {HTMLElement} [scope]
    * @private
    */
   static _requestLoad(scope) {
     const activeTabId = this.activeFilter;
-    const targetScope = scope || ui.chat.element;
+    const targetScope = scope || (ui.chat.element ? ui.chat.element[0] : null);
     if (activeTabId && targetScope) {
       this._debouncedCheck(activeTabId, targetScope);
     }
@@ -37,35 +39,43 @@ export class MultipleChatTabs {
 
   /**
    * Refresh tab UI
-   * @param {jQuery} html
+   * @param {HTMLElement} html
    */
   static async refreshTabUI(html) {
-    html.find(".mct-container").remove();
+    html.querySelector(".mct-container")?.remove();
 
     let tabs = this.getTabs();
     const currentUser = game.user;
+    const api = game.modules.get("multiple-chat-tabs").api;
 
-    // Whisper tab filter
+    // Whisper tabs filter
     tabs = tabs.filter((tab) => {
-      if (!tab.isWhisperTab) {
-        return true;
-      }
+      if (!tab.isWhisperTab) return true;
       return tab.whisperTargets?.includes(currentUser.id);
     });
 
     if (tabs.length === 0) {
-      html.find("#chat-log .message").show();
+      const messageContainer = html.querySelector("ol.chat-log, #chat-log");
+      if (messageContainer) {
+        messageContainer
+          .querySelectorAll(".message")
+          .forEach((el) => (el.style.display = ""));
+      }
       if (ui.chat) ui.chat.scrollBottom();
       return;
     }
-    if (!tabs.some((t) => t.id === this.activeFilter)) {
-      this.activeFilter = tabs[0]?.id || null;
+
+    let activeFilter = html.dataset.activeFilter || this.activeFilter;
+    if (!tabs.some((t) => t.id === activeFilter)) {
+      activeFilter = tabs[0]?.id || null;
     }
+    html.dataset.activeFilter = activeFilter;
+    this.activeFilter = activeFilter;
 
     // Initialize default tab's property
     const initialActiveTabId = this.activeFilter;
     if (initialActiveTabId) {
-      const windowId = html.attr("id");
+      const windowId = html.id;
       if (!this.oldestMessage[initialActiveTabId]) {
         this.oldestMessage[initialActiveTabId] =
           this.getOldestMessage(initialActiveTabId);
@@ -89,200 +99,230 @@ export class MultipleChatTabs {
     }));
     const isGM = game.user.isGM;
 
-    const tabsHtml = await renderTemplate(
-      "modules/multiple-chat-tabs/templates/chat-tabs.hbs",
-      { tabs: processedTabs, showCount: showCount, isGM: isGM }
-    );
-    const tabsElement = $(tabsHtml);
-    tabsElement
-      .find(`.item[data-filter="${this.activeFilter}"]`)
-      .addClass("active");
-    html.find("#chat-log").after(tabsElement);
+    // core version check
+    let tabsHtml;
+    if (api.isV12()) {
+      tabsHtml = await renderTemplate(
+        "modules/multiple-chat-tabs/templates/chat-tabs.hbs",
+        { tabs: processedTabs, showCount: showCount, isGM: isGM }
+      );
+    } else {
+      tabsHtml = await foundry.applications.handlebars.renderTemplate(
+        "modules/multiple-chat-tabs/templates/chat-tabs.hbs",
+        { tabs: processedTabs, showCount: showCount, isGM: isGM }
+      );
+    }
+
+    // core version check
+    if (api.isV12()) {
+      const chatLog = html.querySelector("#chat-log");
+      chatLog?.insertAdjacentHTML("afterend", tabsHtml);
+    } else {
+      const chatForm = html.querySelector(".chat-form");
+      if (chatForm) {
+        chatForm.insertAdjacentHTML("beforebegin", tabsHtml);
+      } else {
+        const messageContainer = html.querySelector("ol.chat-log");
+        messageContainer?.insertAdjacentHTML("beforebegin", tabsHtml);
+      }
+    }
+
+    html
+      .querySelector(`.item[data-filter="${activeFilter}"]`)
+      ?.classList.add("active");
 
     // Activate listener
     this._activateTabListeners(html);
     this.applyFilter(html);
-    this._adjustScrollButtonPosition();
+    this._adjustScrollButtonPosition(html);
     this._scrollActiveTab(html);
     this._requestLoad(html);
   }
 
   /**
    * Tab UI helper
-   * @param {jQuery} html
+   * @param {HTMLElement} html
    * @private
    */
   static _activateTabListeners(html) {
-    // Tab click listener
-    html
-      .off("click", ".multiple-chat-tabs-nav .item")
-      .on(
-        "click",
-        ".multiple-chat-tabs-nav .item",
-        this._onTabClick.bind(this)
-      );
+    const container = html.querySelector(".mct-container");
+    if (!container) return;
 
-    // Context menu listener
-    $(".mct-context-menu").remove();
+    container.addEventListener("click", (event) => {
+      const target = event.target;
+      const tabItem = target.closest(".multiple-chat-tabs-nav .item");
+      const addTabBtn = target.closest(".add-tab-btn");
+      const scrollBtn = target.closest(".scroll-btn");
+      const loadMoreLink = target.closest(".mct-load-more-container a");
 
-    html
-      .off("contextmenu", ".multiple-chat-tabs-nav .item")
-      .on("contextmenu", ".multiple-chat-tabs-nav .item", (event) => {
-        if (!game.user.isGM) return;
+      if (tabItem) {
         event.preventDefault();
-        event.stopPropagation();
+        this._onTabClick(event);
+      } else if (addTabBtn) {
+        this._onAddTabClick(event);
+      } else if (scrollBtn) {
+        const scroller = container.querySelector(".mct-scroller");
+        if (!scroller) return;
+        const direction = scrollBtn.classList.contains("left") ? -1 : 1;
+        const scrollAmount = scroller.clientWidth * 0.7;
+        scroller.scrollLeft += scrollAmount * direction;
+      } else if (loadMoreLink) {
+      }
+    });
 
-        $(".mct-context-menu").remove();
+    container.addEventListener("contextmenu", (event) => {
+      const target = event.target;
+      const tabItem = target.closest(".multiple-chat-tabs-nav .item");
+      const addTabBtn = target.closest(".add-tab-btn");
 
-        const tabElement = $(event.currentTarget);
-        const tabId = tabElement.data("filter");
-        if (!tabId) return;
-
-        const allTabs = this.getTabs();
-        const tab = allTabs.find((t) => t.id === tabId);
-        if (!tab) return;
-
-        const isDefaultTab = allTabs.findIndex((t) => t.id === tabId) === 0;
-
-        // Menu items
-        const menuItems = [];
-        menuItems.push(
-          `<li data-action="edit"><i class="fas fa-cog"></i> ${game.i18n.localize(
-            "MCT.context.settings"
-          )}</li>`
-        );
-        if (!isDefaultTab) {
-          menuItems.push(
-            `<li data-action="delete"><i class="fas fa-trash"></i> ${game.i18n.localize(
-              "MCT.context.delete"
-            )}</li>`
-          );
-        }
-
-        const menu = $(`<ul class="mct-context-menu"></ul>`).html(
-          menuItems.join("")
-        );
-        $("body").append(menu);
-
-        // Position Adjust
-        const menuWidth = menu.outerWidth();
-        const menuHeight = menu.outerHeight();
-        const windowWidth = $(window).width();
-        const windowHeight = $(window).height();
-        let top = event.clientY;
-        let left = event.clientX;
-
-        if (left + menuWidth > windowWidth) {
-          left = windowWidth - menuWidth - 5;
-        }
-        if (top + menuHeight > windowHeight) {
-          top = windowHeight - menuHeight - 5;
-        }
-        menu.css({
-          position: "fixed",
-          top: `${top}px`,
-          left: `${left}px`,
-        });
-
-        // Menu click listener
-        menu.find("li").on("click", (e) => {
-          const action = $(e.currentTarget).data("action");
-          if (action === "edit") {
-            Hooks.call("mct:requestTabEdit", tabId);
-          } else if (action === "delete") {
-            this._onDeleteTabRequested(tabId);
-          }
-          menu.remove();
-        });
-
-        const closeMenu = () => menu.remove();
-        $(window).one("click", closeMenu);
-        $(window).one("contextmenu", closeMenu);
-      });
-
-    // Tab Scroll button listener
-    const scroller = html.find(".mct-scroller");
-    if (!scroller.length) return;
-    this.updateScrollButtons(html);
-
-    html.off("click", ".scroll-btn").on("click", ".scroll-btn", (event) => {
-      const direction = $(event.currentTarget).hasClass("left") ? -1 : 1;
-      const scrollAmount = scroller.width() * 0.7;
-      scroller.scrollLeft(scroller.scrollLeft() + scrollAmount * direction);
+      if (tabItem) {
+        this._onTabContextMenu(event);
+      } else if (addTabBtn) {
+        this._onAddTabContextMenu(event);
+      }
     });
 
     // Tabbar scroll listener
-    scroller.off("scroll").on("scroll", () => this.updateScrollButtons(html));
-    scroller.off("wheel").on("wheel", (event) => {
-      event.preventDefault();
-      const delta = event.originalEvent.deltaX || event.originalEvent.deltaY;
-      scroller.scrollLeft(scroller.scrollLeft() + delta);
+    const scroller = container.querySelector(".mct-scroller");
+    if (scroller) {
+      this.updateScrollButtons(container);
+      scroller.addEventListener("scroll", () =>
+        this.updateScrollButtons(container)
+      );
+      scroller.addEventListener("wheel", (event) => {
+        event.preventDefault();
+        const delta = event.deltaX || event.deltaY;
+        scroller.scrollLeft += delta;
+      });
+    }
+  }
+
+  /**
+   * Tab context menu event handler
+   * @param {MouseEvent} event
+   * @private
+   */
+  static _onTabContextMenu(event) {
+    if (!game.user.isGM) return;
+    event.preventDefault();
+    event.stopPropagation();
+
+    document.querySelector(".mct-context-menu")?.remove();
+
+    const tabElement = event.target.closest(".multiple-chat-tabs-nav .item");
+    if (!tabElement) return;
+
+    const tabId = tabElement.dataset.filter;
+    if (!tabId) return;
+
+    const allTabs = this.getTabs();
+    const tab = allTabs.find((t) => t.id === tabId);
+    if (!tab) return;
+    const isDefaultTab = allTabs.findIndex((t) => t.id === tabId) === 0;
+
+    const menuItems = [
+      `<li data-action="edit"><i class="fa-solid fa-cog"></i> ${game.i18n.localize(
+        "MCT.context.settings"
+      )}</li>`,
+    ];
+    if (!isDefaultTab) {
+      menuItems.push(
+        `<li data-action="delete"><i class="fa-solid fa-trash"></i> ${game.i18n.localize(
+          "MCT.context.delete"
+        )}</li>`
+      );
+    }
+
+    const menu = document.createElement("ul");
+    menu.className = "mct-context-menu";
+    menu.innerHTML = menuItems.join("");
+    document.body.appendChild(menu);
+
+    this._positionContextMenu(menu, event);
+
+    menu.addEventListener("click", (e) => {
+      const clickedLi = e.target.closest("li");
+      if (!clickedLi) return;
+      const action = clickedLi.dataset.action;
+      if (action === "edit") {
+        Hooks.call("mct:requestTabEdit", tabId);
+      } else if (action === "delete") {
+        this._onDeleteTabRequested(tabId);
+      }
+      menu.remove();
     });
 
-    // Add tab button listener
-    html
-      .off("click", ".add-tab-btn")
-      .on("click", ".add-tab-btn", this._onAddTabClick.bind(this));
+    const closeMenu = () => menu.remove();
+    window.addEventListener("click", closeMenu, { once: true });
+    window.addEventListener("contextmenu", closeMenu, { once: true });
+  }
 
-    // Add tab button context menu listener
-    html
-      .off("contextmenu", ".add-tab-btn")
-      .on("contextmenu", ".add-tab-btn", (event) => {
-        if (!game.user.isGM) return;
-        event.preventDefault();
-        event.stopPropagation();
+  /**
+   * Add tab button context menu event handler
+   * @param {MouseEvent} event
+   * @private
+   */
+  static _onAddTabContextMenu(event) {
+    if (!game.user.isGM) return;
+    event.preventDefault();
+    event.stopPropagation();
 
-        $(".mct-context-menu").remove();
+    document.querySelector(".mct-context-menu")?.remove();
 
-        const menuItems = [
-          `<li data-action="settings"><i class="fas fa-tasks"></i> ${game.i18n.localize(
-            "MCT.context.tabSettings"
-          )}</li>`,
-        ];
+    const menuItems = [
+      `<li data-action="settings"><i class="fa-solid fa-tasks"></i> ${game.i18n.localize(
+        "MCT.context.tabSettings"
+      )}</li>`,
+    ];
 
-        const menu = $(`<ul class="mct-context-menu"></ul>`).html(
-          menuItems.join("")
-        );
-        $("body").append(menu);
+    const menu = document.createElement("ul");
+    menu.className = "mct-context-menu";
+    menu.innerHTML = menuItems.join("");
+    document.body.appendChild(menu);
 
-        const menuWidth = menu.outerWidth();
-        const menuHeight = menu.outerHeight();
-        const windowWidth = $(window).width();
-        const windowHeight = $(window).height();
-        let top = event.clientY;
-        let left = event.clientX;
+    this._positionContextMenu(menu, event);
 
-        if (left + menuWidth > windowWidth) {
-          left = windowWidth - menuWidth - 5;
-        }
-        if (top + menuHeight > windowHeight) {
-          top = windowHeight - menuHeight - 5;
-        }
-        menu.css({ position: "fixed", top: `${top}px`, left: `${left}px` });
+    menu.addEventListener("click", (e) => {
+      const clickedLi = e.target.closest("li");
+      if (!clickedLi || clickedLi.dataset.action !== "settings") return;
 
-        menu.find("li[data-action='settings']").on("click", (e) => {
-          const menuSetting = game.settings.menus.get(
-            "multiple-chat-tabs.tab-settings"
-          );
-          if (menuSetting) {
-            const app = new menuSetting.type();
-            app.render(true);
-          }
-          menu.remove();
-        });
+      const menuSetting = game.settings.menus.get(
+        "multiple-chat-tabs.tab-settings"
+      );
+      if (menuSetting) {
+        new menuSetting.type().render(true);
+      }
+      menu.remove();
+    });
 
-        const closeMenu = () => menu.remove();
-        $(window).one("click", closeMenu);
-        $(window).one("contextmenu", closeMenu);
-      });
+    const closeMenu = () => menu.remove();
+    window.addEventListener("click", closeMenu, { once: true });
+    window.addEventListener("contextmenu", closeMenu, { once: true });
+  }
 
-    // Message load button listener
-    html
-      .off("click", ".mct-load-more-container a")
-      .on("click", ".mct-load-more-container a", (event) => {
-        event.preventDefault();
-        this.loadMessage({ scope: html });
-      });
+  /**
+   * Position the context menu.
+   * @param {HTMLElement} menu
+   * @param {MouseEvent} event
+   * @private
+   */
+  static _positionContextMenu(menu, event) {
+    const menuWidth = menu.offsetWidth;
+    const menuHeight = menu.offsetHeight;
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    let top = event.clientY;
+    let left = event.clientX;
+
+    if (left + menuWidth > windowWidth) {
+      left = windowWidth - menuWidth - 5;
+    }
+    if (top + menuHeight > windowHeight) {
+      top = windowHeight - menuHeight - 5;
+    }
+    menu.style.position = "fixed";
+    menu.style.top = `${top}px`;
+    menu.style.left = `${left}px`;
   }
 
   /**
@@ -322,24 +362,30 @@ export class MultipleChatTabs {
    * @param {Event} event
    */
   static async _onTabClick(event) {
-    event.preventDefault();
-    const appElement = $(event.currentTarget).closest(".app");
-    const clickedTab = $(event.currentTarget);
-    const clickedFilter = clickedTab.data("filter");
+    const clickedTab = event.target.closest(".item");
+    if (!clickedTab) return;
 
-    if (MultipleChatTabs.activeFilter === clickedFilter) return;
+    const appElement = clickedTab.closest(".window-app, #chat, #chat-popout");
+    if (!appElement) return;
 
-    appElement
-      .find(".multiple-chat-tabs-nav .item.active")
-      .removeClass("active");
-    clickedTab.addClass("active");
+    const nativeAppElement = appElement.jquery ? appElement[0] : appElement;
+    const clickedFilter = clickedTab.dataset.filter;
+
+    if (nativeAppElement.dataset.activeFilter === clickedFilter) return;
+
+    nativeAppElement
+      .querySelector(".multiple-chat-tabs-nav .item.active")
+      ?.classList.remove("active");
+    clickedTab.classList.add("active");
+
+    nativeAppElement.dataset.activeFilter = clickedFilter;
     MultipleChatTabs.activeFilter = clickedFilter;
 
-    this.applyFilter(appElement);
-    this._scrollActiveTab(appElement);
+    this.applyFilter(nativeAppElement);
+    this._scrollActiveTab(nativeAppElement);
 
     // Update oldestMessage
-    const windowId = appElement.attr("id");
+    const windowId = nativeAppElement.id;
     if (!this.oldestMessage[clickedFilter]) {
       this.oldestMessage[clickedFilter] = this.getOldestMessage(clickedFilter);
     }
@@ -350,58 +396,80 @@ export class MultipleChatTabs {
     // Update oldestLoadMessage
     this.oldestLoadMessage[windowId][clickedFilter] = this.getOldestLoadMessage(
       clickedFilter,
-      appElement
+      nativeAppElement
     );
 
     // Reset unread count
     if (this.getUnreadCounts()[clickedFilter]) {
       await this.resetUnreadCount(clickedFilter);
-      clickedTab.find(".unread-indicator").remove();
+      clickedTab.querySelector(".unread-indicator")?.remove();
     }
 
     // Loadable check
-    this._requestLoad(appElement);
+    this._requestLoad(nativeAppElement);
+
+    // Scroll bottom
+    let chatApp = null;
+
+    if (nativeAppElement.id.startsWith("chat-popout")) {
+      chatApp = MultipleChatTabs.popoutChatApps[nativeAppElement.id];
+    } else if (nativeAppElement.id === "chat") {
+      chatApp = ui.chat;
+    }
+
+    if (chatApp && typeof chatApp.scrollBottom === "function") {
+      chatApp.scrollBottom();
+    }
   }
 
   /**
    * Tab scroll
-   * @param {jQuery} html
+   * @param {HTMLElement} container
    */
-  static updateScrollButtons(html) {
-    const scroller = html.find(".mct-scroller");
-    if (!scroller.length) return;
+  static updateScrollButtons(container) {
+    if (!container) return;
+    const scroller = container.querySelector(".mct-scroller");
+    if (!scroller) return;
 
-    const scrollLeft = scroller.scrollLeft();
-    const scrollWidth = scroller[0].scrollWidth;
-    const clientWidth = scroller[0].clientWidth;
+    const scrollLeft = scroller.scrollLeft;
+    const scrollWidth = scroller.scrollWidth;
+    const clientWidth = scroller.clientWidth;
 
-    html.find(".scroll-btn.left").toggle(scrollLeft > 0);
-    html
-      .find(".scroll-btn.right")
-      .toggle(scrollWidth - clientWidth - scrollLeft > 1);
+    const leftBtn = container.querySelector(".scroll-btn.left");
+    if (leftBtn) leftBtn.style.display = scrollLeft > 0 ? "" : "none";
+
+    const rightBtn = container.querySelector(".scroll-btn.right");
+    if (rightBtn)
+      rightBtn.style.display =
+        scrollWidth - clientWidth - scrollLeft > 1 ? "" : "none";
   }
 
   /**
    * Ajust active tab position
-   * @param {jQuery} [scope]
+   * @param {HTMLElement} [scope]
    * @private
    */
   static _scrollActiveTab(scope) {
-    const container = scope || ui.chat.element;
+    const container = scope || (ui.chat.element ? ui.chat.element[0] : null);
     if (!container) return;
 
-    const scrollerEl = container.find(".mct-scroller")[0];
-    const activeTabEl = container.find(
+    const mctContainer = container.querySelector(".mct-container");
+    if (!mctContainer) return;
+
+    const scrollerEl = mctContainer.querySelector(".mct-scroller");
+    const activeTabEl = mctContainer.querySelector(
       ".multiple-chat-tabs-nav .item.active"
-    )[0];
+    );
     if (!scrollerEl || !activeTabEl) return;
 
     const scrollerRect = scrollerEl.getBoundingClientRect();
     const activeTabRect = activeTabEl.getBoundingClientRect();
+    const leftBtn = mctContainer.querySelector(".scroll-btn.left");
+    const rightBtn = mctContainer.querySelector(".scroll-btn.right");
     const leftButtonWidth =
-      container.find(".scroll-btn.left:visible").outerWidth(true) || 0;
+      leftBtn && leftBtn.style.display !== "none" ? leftBtn.offsetWidth : 0;
     const rightButtonWidth =
-      container.find(".scroll-btn.right:visible").outerWidth(true) || 0;
+      rightBtn && rightBtn.style.display !== "none" ? rightBtn.offsetWidth : 0;
     const visibleAreaStart = scrollerRect.left + leftButtonWidth;
     const visibleAreaEnd = scrollerRect.right - rightButtonWidth;
 
@@ -502,7 +570,7 @@ export class MultipleChatTabs {
       }),
       buttons: {
         delete: {
-          icon: '<i class="fas fa-trash"></i>',
+          icon: '<i class="fa-solid fa-trash"></i>',
           label: game.i18n.localize("Delete"),
           callback: async () => {
             const newTabs = tabs.filter((t) => t.id !== tabId);
@@ -523,7 +591,7 @@ export class MultipleChatTabs {
           },
         },
         cancel: {
-          icon: '<i class="fas fa-times"></i>',
+          icon: '<i class="fa-solid fa-times"></i>',
           label: game.i18n.localize("Cancel"),
         },
       },
@@ -534,70 +602,83 @@ export class MultipleChatTabs {
 
   /**
    * Separate message
-   * @param {jQuery} [scope]
+   * @param {HTMLElement} [scope]
    * @param {object} [options={}]
    * @param {boolean} [options.scroll=true]
    */
   static applyFilter(scope, { scroll = true } = {}) {
-    const chatLog = scope ? scope.find("#chat-log") : $("#chat-log");
-    if (!chatLog.length) return;
+    // core version check
+    const api = game.modules.get("multiple-chat-tabs").api;
+    let messageContainer;
+    if (api.isV12()) {
+      messageContainer = scope.querySelector("#chat-log");
+    } else {
+      messageContainer = scope.querySelector("ol.chat-log");
+    }
+    if (!messageContainer) return;
 
-    const messages = chatLog.find(".message");
-    messages.each((i, el) => {
-      this.applyFilterToMessage($(el));
+    const activeFilter = scope.dataset.activeFilter;
+    const messages = messageContainer.querySelectorAll(".message");
+    messages.forEach((el) => {
+      this.applyFilterToMessage(el, activeFilter);
     });
 
-    if (scroll && ui.chat) {
-      ui.chat.scrollBottom();
-    }
-
     // Scroll bottom button refresh
-    const chat = scope
-      ? Object.values(ui.windows).find((w) => w.element[0] === scope[0]) ??
-        ui.chat
-      : ui.chat;
+    const nativeScope = scope.jquery ? scope[0] : scope;
+    const chat =
+      Object.values(ui.windows).find(
+        (w) => (w.element.jquery ? w.element[0] : w.element) === nativeScope
+      ) || (ui.chat.element[0] === nativeScope ? ui.chat : null);
     if (chat && typeof chat._onScrollLog === "function") {
-      const fakeEvent = { currentTarget: chatLog[0], target: chatLog[0] };
+      const fakeEvent = {
+        currentTarget: messageContainer,
+        target: messageContainer,
+      };
       chat._onScrollLog(fakeEvent);
     }
   }
 
   /**
    * Filtering message
-   * @param {jQuery} messageElement
-   */
-  static applyFilterToMessage(messageElement) {
+   * @param {HTMLElement} messageElement
+   * @param {string} activeFilter
+   *   */
+  static applyFilterToMessage(messageElement, activeFilter) {
     const allTabs = this.getTabs();
-    const message = game.messages.get(messageElement.data("messageId"));
+    const message = game.messages.get(messageElement.dataset.messageId);
 
-    const show = MessageFilter.filterMessage(
-      message,
-      allTabs,
-      this.activeFilter
-    );
+    const show = MessageFilter.filterMessage(message, allTabs, activeFilter);
 
-    messageElement.toggle(show);
+    messageElement.style.display = show ? "" : "none";
   }
+
   /**
    * Scroll to bottom button shift
-   * @param {jQuery} html
+   * @param {HTMLElement} html
    * @private
    */
-  static _adjustScrollButtonPosition() {
-    const jumpToBottomContainer = $(".jump-to-bottom");
-    if (!jumpToBottomContainer.length) return;
+  static _adjustScrollButtonPosition(scope) {
+    if (!scope) {
+      const chatApp = document.getElementById("chat");
+      if (!chatApp) return;
+      scope = chatApp;
+    }
 
-    const mctContainer = $("#chat .mct-container");
+    const jumpToBottomContainer = scope.querySelector(".jump-to-bottom");
+    if (!jumpToBottomContainer) return;
 
-    if (mctContainer.length > 0) {
-      const tabBarHeight = mctContainer.outerHeight(true);
+    const mctContainer = scope.querySelector(".mct-container");
 
-      jumpToBottomContainer.css({
-        transform: `translateY(-${tabBarHeight}px)`,
-        transition: "transform 0.2s ease-in-out",
-      });
+    if (mctContainer) {
+      const style = getComputedStyle(mctContainer);
+      const marginTop = parseFloat(style.marginTop) || 0;
+      const marginBottom = parseFloat(style.marginBottom) || 0;
+      const tabBarHeight = mctContainer.offsetHeight + marginTop + marginBottom;
+
+      jumpToBottomContainer.style.transform = `translateY(-${tabBarHeight}px)`;
+      jumpToBottomContainer.style.transition = "transform 0.2s ease-in-out";
     } else {
-      jumpToBottomContainer.css("transform", "");
+      jumpToBottomContainer.style.transform = "";
     }
   }
 
@@ -636,15 +717,17 @@ export class MultipleChatTabs {
   /**
    * Get Oldest Load Message ID
    * @param {string} tabId
-   * @param {jQuery} [scope=ui.chat.element]
+   * @param {HTMLElement} [scope=ui.chat.element[0]]
    * @param {object} [options={}]
    * @param {boolean} [options.isFirst=false]
    * @returns {string|null}
    */
   static getOldestLoadMessage(tabId, scope, { isFirst = false } = {}) {
     if (!tabId) return null;
-    const targetElement = scope || ui.chat.element;
-    const windowId = targetElement.attr("id") || "unknown-window";
+    const targetElement =
+      scope || (ui.chat.element ? ui.chat.element[0] : null);
+    if (!targetElement) return null;
+    const windowId = targetElement.id || "unknown-window";
     const allTabs = this.getTabs();
     const tab = allTabs.find((t) => t.id === tabId);
 
@@ -655,12 +738,12 @@ export class MultipleChatTabs {
     }
 
     // Full DOM search
-    const chatLog = targetElement.find("#chat-log");
-    if (!chatLog || !chatLog.length) return null;
-    const messageElements = chatLog.find(".message");
+    const chatLog = targetElement.querySelector("#chat-log");
+    if (!chatLog) return null;
+    const messageElements = chatLog.querySelectorAll(".message");
     for (let i = 0; i < messageElements.length; i++) {
       const el = messageElements[i];
-      const messageId = $(el).data("messageId");
+      const messageId = el.dataset.messageId;
       const message = game.messages.get(messageId);
       if (message && MessageFilter.filterMessage(message, allTabs, tabId)) {
         return message.id;
@@ -673,57 +756,61 @@ export class MultipleChatTabs {
    * Load past message
    * @param {object} [options]
    * @param {number} [options.batchSize]
-   * @param {jQuery} [options.scope=null]
+   * @param {HTMLElement} [options.scope=null]
    */
   static async loadMessage({ scope = null } = {}) {
     const chat = scope
-      ? Object.values(ui.windows).find((w) => w.element[0] === scope[0]) ??
-        ui.chat
+      ? Object.values(ui.windows).find(
+          (w) => w.element && w.element[0] === scope
+        ) ?? ui.chat
       : ui.chat;
     if (!chat) return;
 
-    const chatLog = chat.element.find("#chat-log");
-    if (!chatLog.length) return;
+    const chatLog = chat.element[0].querySelector("#chat-log");
+    if (!chatLog) return;
 
-    const oldScrollHeight = chatLog[0].scrollHeight;
-    const oldScrollTop = chatLog.scrollTop();
+    const oldScrollHeight = chatLog.scrollHeight;
+    const oldScrollTop = chatLog.scrollTop;
 
     const batchSize = game.settings.get(
       "multiple-chat-tabs",
       "load-batch-size"
     );
-    await chat._renderBatch(chat.element, batchSize);
+    await chat._renderBatch(chat.element, batchSize, chatLog.scrollTop === 0);
 
-    this.applyFilter(chat.element, { scroll: false });
+    this.applyFilter(chat.element[0], { scroll: false });
 
     setTimeout(() => {
       // Scroll position
-      const newScrollHeight = chatLog[0].scrollHeight;
+      const newScrollHeight = chatLog.scrollHeight;
       const heightDifference = newScrollHeight - oldScrollHeight;
       const newScrollTop = oldScrollTop + heightDifference;
 
-      chatLog.scrollTop(Math.max(0, newScrollTop));
+      chatLog.scrollTop = Math.max(0, newScrollTop);
     }, 50);
   }
 
   /**
    * Message overflow check
-   * @param {jQuery} [scope=ui.chat.element]
+   * @param {HTMLElement} [scope=ui.chat.element]
    * @returns {boolean}
    */
   static isOverflow(scope) {
-    const targetElement = scope || ui.chat.element;
-    const chatLog = targetElement.find("#chat-log");
-    if (!chatLog || !chatLog.length) {
+    const targetElement =
+      scope || (ui.chat.element ? ui.chat.element[0] : null);
+    const chatLog = targetElement?.querySelector("#chat-log");
+    if (!chatLog) {
       return false;
     }
 
-    const containerHeight = chatLog[0].clientHeight;
+    const containerHeight = chatLog.clientHeight;
 
     let totalMessagesHeight = 0;
-    chatLog.find(".message:visible").each((index, element) => {
-      totalMessagesHeight += element.offsetHeight;
-    });
+    chatLog
+      .querySelectorAll(".message:not([style*='display: none'])")
+      .forEach((element) => {
+        totalMessagesHeight += element.offsetHeight;
+      });
 
     return totalMessagesHeight > containerHeight;
   }
@@ -734,9 +821,12 @@ export class MultipleChatTabs {
    * @private
    */
   static _onScroll(event) {
-    const chatLog = $(event.currentTarget);
-    const scope = chatLog.closest(".app");
-    if (!scope.length) return;
+    const chatLog = event.currentTarget;
+    if (!chatLog || typeof chatLog.closest !== "function") return;
+
+    const scope =
+      chatLog.closest(".chat-popout") || document.getElementById("chat");
+    if (!scope) return;
 
     if (MultipleChatTabs.isOverflow(scope) && this._isScrollTop(chatLog)) {
       this._onScrollTop(scope);
@@ -745,22 +835,22 @@ export class MultipleChatTabs {
 
   /**
    * Check scroll position
-   * @param {jQuery} chatLog The chat log element
+   * @param {HTMLElement} chatLog
    * @returns {boolean}
    * @private
    */
   static _isScrollTop(chatLog) {
-    if (!chatLog || !chatLog.length) return false;
+    if (!chatLog) return false;
 
     const SCROLL_THRESHOLD_PERCENT = 0.05;
-    const thresholdPx = chatLog[0].clientHeight * SCROLL_THRESHOLD_PERCENT;
+    const thresholdPx = chatLog.clientHeight * SCROLL_THRESHOLD_PERCENT;
 
-    return chatLog.scrollTop() <= thresholdPx;
+    return chatLog.scrollTop <= thresholdPx;
   }
 
   /**
    * Scroll top event handler
-   * @param {jQuery} scope
+   * @param {HTMLElement} scope
    * @private
    */
   static _onScrollTop(scope) {
@@ -799,8 +889,11 @@ export class MultipleChatTabs {
 
     if (isLoadMessage) {
       // Update oldestLoadMessage
-      const scope = $(targetElement).closest(".app");
-      const windowId = scope.attr("id");
+      const scope =
+        targetElement.closest(".app") || document.getElementById("chat");
+      if (!scope) return;
+
+      const windowId = scope.id;
       const activeTabId = this.activeFilter;
 
       if (windowId && activeTabId) {
@@ -835,7 +928,7 @@ export class MultipleChatTabs {
   /**
    * Loadable check helper
    * @param {string} tabId
-   * @param {jQuery} scope
+   * @param {HTMLElement} scope
    * @private
    */
   static _isLoadable(tabId, scope) {
@@ -845,10 +938,10 @@ export class MultipleChatTabs {
     const tab = allTabs.find((t) => t.id === tabId);
     const tabLabel = tab ? tab.label : null;
     const oldestMessage = this.oldestMessage[tabId] || null;
-    const windowId = scope.attr("id");
+    const windowId = scope.id;
     const oldestLoadMessage = this.oldestLoadMessage[windowId]?.[tabId] || null;
     const isOverflow = this.isOverflow(scope);
-    const chatLog = scope.find("#chat-log");
+    const chatLog = scope.querySelector("#chat-log");
     const isScrollTop = this._isScrollTop(chatLog);
     const autoLoad = game.settings.get(
       "multiple-chat-tabs",
@@ -861,15 +954,17 @@ export class MultipleChatTabs {
       isLoadable = true;
 
     // Show button or Auto load message
-    const loadButton = scope.find(".mct-load-more-container");
-    if (isLoadable) {
-      if (autoLoad) {
-        this.loadMessage({ scope });
+    const loadButton = scope.querySelector(".mct-load-more-container");
+    if (loadButton) {
+      if (isLoadable) {
+        if (autoLoad) {
+          this.loadMessage({ scope });
+        } else {
+          loadButton.style.display = "block";
+        }
       } else {
-        loadButton.show();
+        loadButton.style.display = "none";
       }
-    } else {
-      loadButton.hide();
     }
   }
 }

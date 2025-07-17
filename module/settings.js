@@ -6,7 +6,7 @@ export function registerSettings() {
   game.settings.registerMenu("multiple-chat-tabs", "tab-settings", {
     name: "MCT.menu.name",
     label: "MCT.menu.label",
-    icon: "fas fa-tasks",
+    icon: "fa-solid fa-tasks",
     type: TabSettings,
     restricted: true,
   });
@@ -32,9 +32,7 @@ export function registerSettings() {
     onChange: () => {
       MultipleChatTabs.oldestMessage = {};
       MultipleChatTabs.oldestLoadMessage = {};
-      if (ui.chat && ui.chat.element) {
-        MultipleChatTabs.refreshTabUI(ui.chat.element);
-      }
+      refreshAllTabUI();
     },
   });
 
@@ -46,9 +44,7 @@ export function registerSettings() {
     type: Boolean,
     default: false,
     onChange: () => {
-      if (ui.chat && ui.chat.element) {
-        MultipleChatTabs.refreshTabUI(ui.chat.element);
-      }
+      refreshAllTabUI();
     },
   });
 
@@ -132,9 +128,7 @@ export function registerSettings() {
       MultipleChatTabs.oldestMessage = {};
       MultipleChatTabs.oldestLoadMessage = {};
       setTimeout(() => {
-        if (ui.chat && ui.chat.element) {
-          MultipleChatTabs.refreshTabUI(ui.chat.element);
-        }
+        refreshAllTabUI();
       }, 100);
     },
   });
@@ -146,20 +140,59 @@ export function registerSettings() {
     default: {},
   });
 
+  // Refresh all Tab UI
+  function refreshAllTabUI() {
+    // core version check
+    const api = game.modules.get("multiple-chat-tabs").api;
+    if (ui.chat && ui.chat.element) {
+      if (api.isV12()) {
+        MultipleChatTabs.refreshTabUI(ui.chat.element[0]);
+      } else {
+        MultipleChatTabs.refreshTabUI(ui.chat.element);
+      }
+    }
+    Object.values(ui.windows).forEach((app) => {
+      if (app.id.startsWith("chat-popout") && app.element) {
+        if (api.isV12()) {
+          MultipleChatTabs.refreshTabUI(app.element[0]);
+        } else {
+          MultipleChatTabs.refreshTabUI(app.element);
+        }
+      }
+    });
+  }
+
   // libWrapper
   if (game.modules.get("lib-wrapper")?.active) {
+    const api = game.modules.get("multiple-chat-tabs").api;
+
+    // core version check
+    const target = api.isV12()
+      ? "ChatLog.prototype.scrollBottom"
+      : "foundry.applications.sidebar.tabs.ChatLog.prototype.scrollBottom";
+
     libWrapper.register(
       "multiple-chat-tabs",
-      "ChatLog.prototype.scrollBottom",
+      target,
       function (wrapped, ...args) {
+        wrapped(...args);
         setTimeout(() => {
-          const log = this.element.find("#chat-log");
-          if (log.length) {
-            log.scrollTop(log[0].scrollHeight);
+          // core version check
+          if (!this.element) return;
+          let nativeElement;
+          if (this.element instanceof HTMLElement) {
+            nativeElement = this.element;
+          } else {
+            nativeElement = this.element[0];
+          }
+          if (!nativeElement) return;
+          const log = nativeElement.querySelector("#chat-log");
+          if (log) {
+            log.scrollTop = log.scrollHeight;
           }
         }, 50);
       },
-      "OVERRIDE"
+      "WRAPPER"
     );
   }
 }
