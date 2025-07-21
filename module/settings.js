@@ -32,7 +32,7 @@ export function registerSettings() {
     onChange: () => {
       MultipleChatTabs.oldestMessage = {};
       MultipleChatTabs.oldestLoadMessage = {};
-      refreshAllTabUI();
+      debouncedRefreshAllTab();
     },
   });
 
@@ -44,7 +44,7 @@ export function registerSettings() {
     type: Boolean,
     default: false,
     onChange: () => {
-      refreshAllTabUI();
+      debouncedRefreshAllTab();
     },
   });
 
@@ -127,9 +127,7 @@ export function registerSettings() {
     onChange: () => {
       MultipleChatTabs.oldestMessage = {};
       MultipleChatTabs.oldestLoadMessage = {};
-      setTimeout(() => {
-        refreshAllTabUI();
-      }, 100);
+      debouncedRefreshAllTab();
     },
   });
 
@@ -139,28 +137,6 @@ export function registerSettings() {
     type: Object,
     default: {},
   });
-
-  // Refresh all Tab UI
-  function refreshAllTabUI() {
-    // core version check
-    const api = game.modules.get("multiple-chat-tabs").api;
-    if (ui.chat && ui.chat.element) {
-      if (api.isV12()) {
-        MultipleChatTabs.refreshTabUI(ui.chat.element[0]);
-      } else {
-        MultipleChatTabs.refreshTabUI(ui.chat.element);
-      }
-    }
-    Object.values(ui.windows).forEach((app) => {
-      if (app.id.startsWith("chat-popout") && app.element) {
-        if (api.isV12()) {
-          MultipleChatTabs.refreshTabUI(app.element[0]);
-        } else {
-          MultipleChatTabs.refreshTabUI(app.element);
-        }
-      }
-    });
-  }
 
   // libWrapper
   if (game.modules.get("lib-wrapper")?.active) {
@@ -196,3 +172,26 @@ export function registerSettings() {
     );
   }
 }
+
+// debounced RefreshTab
+const debouncedRefreshAllTab = foundry.utils.debounce(() => {
+  // core version check
+  const api = game.modules.get("multiple-chat-tabs").api;
+  if (ui.chat && ui.chat.element) {
+    if (api.isV12()) {
+      MultipleChatTabs.refreshTabUI(ui.chat.element[0]);
+    } else {
+      MultipleChatTabs.refreshTabUI(ui.chat.element);
+    }
+  }
+  Object.values(ui.windows).forEach((app) => {
+    if (app.id.startsWith("chat-popout") && app.element) {
+      if (api.isV12()) {
+        MultipleChatTabs.refreshTabUI(app.element[0]);
+      } else {
+        MultipleChatTabs.refreshTabUI(app.element);
+      }
+    }
+  });
+}, 100);
+export { debouncedRefreshAllTab };

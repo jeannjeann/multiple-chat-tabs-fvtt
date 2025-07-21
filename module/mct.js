@@ -1,5 +1,5 @@
 import { MultipleChatTabs } from "./multipleChatTabs.js";
-import { registerSettings } from "./settings.js";
+import { registerSettings, debouncedRefreshAllTab } from "./settings.js";
 import { TabDetailSettings } from "./tabSettings.js";
 import { MessageFilter } from "./messageFilter.js";
 
@@ -381,25 +381,7 @@ Hooks.on("createChatMessage", async (message) => {
   }
 
   if (needsRefresh) {
-    const api = game.modules.get("multiple-chat-tabs").api;
-    if (ui.chat && ui.chat.element) {
-      // core version check
-      if (api.isV12()) {
-        await MultipleChatTabs.refreshTabUI(ui.chat.element[0]);
-      } else {
-        await MultipleChatTabs.refreshTabUI(ui.chat.element);
-      }
-    }
-    for (const app of Object.values(ui.windows)) {
-      if (app.id.startsWith("chat-popout") && app.element) {
-        // core version check
-        if (api.isV12()) {
-          await MultipleChatTabs.refreshTabUI(app.element[0]);
-        } else {
-          await MultipleChatTabs.refreshTabUI(app.element);
-        }
-      }
-    }
+    debouncedRefreshAllTab();
   }
 
   // Loadable check
