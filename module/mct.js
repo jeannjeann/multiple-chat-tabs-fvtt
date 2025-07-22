@@ -55,6 +55,20 @@ Hooks.once("init", async function () {
       );
     });
   }
+
+  // chatMessage hook for v11
+  if (api.isV11()) {
+    Hooks.on("chatMessage", (chatLog, messageText, chatData) => {
+      const allTabs = MultipleChatTabs.getTabs();
+      const activeTabId = MultipleChatTabs.activeFilter || allTabs[0]?.id;
+      if (!activeTabId) return true;
+
+      const activeTab = allTabs.find((t) => t.id === activeTabId);
+      if (!activeTab) return true;
+
+      // if you need to change something of message at v11
+    });
+  }
 });
 
 /**
@@ -503,6 +517,7 @@ Hooks.on("deleteChatMessage", (message, options, userId) => {
 });
 
 Hooks.on("preCreateChatMessage", (message, data, options, userId) => {
+  const api = game.modules.get("multiple-chat-tabs").api;
   const allTabs = MultipleChatTabs.getTabs();
   const activeTabId = MultipleChatTabs.activeFilter || allTabs[0]?.id;
 
@@ -523,25 +538,50 @@ Hooks.on("preCreateChatMessage", (message, data, options, userId) => {
         targets.push(game.user.id);
       }
       if (targets.length > 0) {
-        updateData.whisper = targets;
-        updateData.style = CONST.CHAT_MESSAGE_STYLES.OTHER;
-        updateData.speaker = {
-          scene: null,
-          actor: null,
-          token: null,
-          alias: undefined,
-        };
+        // core version check
+        if (api.isV11()) {
+          updateData.whisper = targets;
+          updateData.type = CONST.CHAT_MESSAGE_TYPES.WHISPER;
+          updateData.speaker = {
+            scene: null,
+            actor: null,
+            token: null,
+            alias: null,
+          };
+        } else {
+          updateData.whisper = targets;
+          updateData.style = CONST.CHAT_MESSAGE_STYLES.OTHER;
+          updateData.speaker = {
+            scene: null,
+            actor: null,
+            token: null,
+            alias: undefined,
+          };
+        }
       }
     } else if (activeTab?.forceOOC) {
       // Force OOC check
-      if (message.style === CONST.CHAT_MESSAGE_STYLES.IC) {
-        updateData.style = CONST.CHAT_MESSAGE_STYLES.OOC;
-        updateData.speaker = {
-          scene: null,
-          actor: null,
-          token: null,
-          alias: undefined,
-        };
+      // core version check
+      if (api.isV11()) {
+        if (message.type === CONST.CHAT_MESSAGE_TYPES.IC) {
+          updateData.type = CONST.CHAT_MESSAGE_TYPES.OOC;
+          updateData.speaker = {
+            scene: null,
+            actor: null,
+            token: null,
+            alias: null,
+          };
+        }
+      } else {
+        if (message.style === CONST.CHAT_MESSAGE_STYLES.IC) {
+          updateData.style = CONST.CHAT_MESSAGE_STYLES.OOC;
+          updateData.speaker = {
+            scene: null,
+            actor: null,
+            token: null,
+            alias: undefined,
+          };
+        }
       }
     }
   }
