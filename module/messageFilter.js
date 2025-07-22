@@ -9,7 +9,7 @@ export class MessageFilter {
     const api = game.modules.get("multiple-chat-tabs").api;
     if (message.isRoll) return "roll";
 
-    // Core version check
+    // core version check
     if (api.isV11()) {
       switch (message.type) {
         case CONST.CHAT_MESSAGE_TYPES.IC:

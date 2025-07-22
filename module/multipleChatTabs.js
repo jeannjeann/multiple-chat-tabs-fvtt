@@ -2,7 +2,15 @@ import { MessageFilter } from "./messageFilter.js";
 
 // MultipleChatTabs Class
 export class MultipleChatTabs {
-  static _debouncedCheck = foundry.utils.debounce(this._isLoadable, 100);
+  static _debouncedCheck = (() => {
+    const checkFn = this._isLoadable;
+    // core version check
+    if (typeof foundry !== "undefined" && foundry.utils?.debounce) {
+      return foundry.utils.debounce(checkFn, 100);
+    } else {
+      return debounce(checkFn.bind(this), 100);
+    }
+  })();
   static resizeObserver = null;
   static popoutChatApps = {};
 
@@ -332,7 +340,14 @@ export class MultipleChatTabs {
     return game.settings.get("multiple-chat-tabs", "unreadTabs") || {};
   }
   static async setUnreadStatus(tabId, status) {
-    const unread = foundry.utils.deepClone(this.getUnreadTabs());
+    const api = game.modules.get("multiple-chat-tabs").api;
+    let unread;
+    // core version check
+    if (api.isV11()) {
+      unread = deepClone(this.getUnreadTabs());
+    } else {
+      unread = foundry.utils.deepClone(this.getUnreadTabs());
+    }
     if (!!unread[tabId] === status) return;
 
     if (status) {
@@ -346,12 +361,26 @@ export class MultipleChatTabs {
     return game.settings.get("multiple-chat-tabs", "unreadTabs") || {};
   }
   static async increaseUnreadCount(tabId) {
-    const counts = foundry.utils.deepClone(this.getUnreadCounts());
+    const api = game.modules.get("multiple-chat-tabs").api;
+    let counts;
+    // core version check
+    if (api.isV11()) {
+      counts = deepClone(this.getUnreadCounts());
+    } else {
+      counts = foundry.utils.deepClone(this.getUnreadCounts());
+    }
     counts[tabId] = (counts[tabId] || 0) + 1;
     await game.settings.set("multiple-chat-tabs", "unreadTabs", counts);
   }
   static async resetUnreadCount(tabId) {
-    const counts = foundry.utils.deepClone(this.getUnreadCounts());
+    const api = game.modules.get("multiple-chat-tabs").api;
+    let counts;
+    // core version check
+    if (api.isV11()) {
+      counts = deepClone(this.getUnreadCounts());
+    } else {
+      counts = foundry.utils.deepClone(this.getUnreadCounts());
+    }
     if (!counts[tabId]) return;
     delete counts[tabId];
     await game.settings.set("multiple-chat-tabs", "unreadTabs", counts);
@@ -522,7 +551,15 @@ export class MultipleChatTabs {
     }
 
     const newTab = {
-      id: `tab-${foundry.utils.randomID(16)}`,
+      id: (() => {
+        const api = game.modules.get("multiple-chat-tabs").api;
+        // core version check
+        if (api.isV11()) {
+          return `tab-${randomID(16)}`;
+        } else {
+          return `tab-${foundry.utils.randomID(16)}`;
+        }
+      })(),
       label: newLabel,
       isDefault: false,
       showAllMessages: false,
@@ -967,4 +1004,18 @@ export class MultipleChatTabs {
       }
     }
   }
+}
+
+/**
+ * Debounce for v11
+ * @param {Function} fn
+ * @param {number} delay
+ * @returns {Function}
+ */
+function debounce(fn, delay) {
+  let timeout;
+  return function (...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn.apply(this, args), delay);
+  };
 }

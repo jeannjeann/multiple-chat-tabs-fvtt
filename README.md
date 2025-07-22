@@ -62,7 +62,8 @@ In 'Install Module' window of Foundry VTT's 'Add-on Modules', paste the above 'M
 
 ## 1.2.0
 - support v11
-- fix default tabID
+- set default tabID to fixed value
+- change default setting
 
 ## 1.1.1
 - bug fix
