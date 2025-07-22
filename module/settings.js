@@ -79,7 +79,7 @@ export function registerSettings() {
     type: String,
     default: JSON.stringify([
       {
-        id: `tab-${foundry.utils.randomID(16)}`,
+        id: `tab-main`,
         label: game.i18n.localize("MCT.settings.defaults.main"),
         isDefault: true,
         showAllMessages: false,
@@ -94,7 +94,7 @@ export function registerSettings() {
         whisperTargets: [],
       },
       {
-        id: `tab-${foundry.utils.randomID(16)}`,
+        id: `tab-roll`,
         label: game.i18n.localize("MCT.settings.defaults.roll"),
         isDefault: false,
         showAllMessages: false,
@@ -109,7 +109,7 @@ export function registerSettings() {
         whisperTargets: [],
       },
       {
-        id: `tab-${foundry.utils.randomID(16)}`,
+        id: `tab-sub`,
         label: game.i18n.localize("MCT.settings.defaults.sub"),
         isDefault: false,
         showAllMessages: false,
@@ -143,10 +143,13 @@ export function registerSettings() {
     const api = game.modules.get("multiple-chat-tabs").api;
 
     // core version check
-    const target = api.isV12()
-      ? "ChatLog.prototype.scrollBottom"
-      : "foundry.applications.sidebar.tabs.ChatLog.prototype.scrollBottom";
-
+    let target;
+    if (api.isV11() || api.isV12()) {
+      target = "ChatLog.prototype.scrollBottom";
+    } else {
+      target =
+        "foundry.applications.sidebar.tabs.ChatLog.prototype.scrollBottom";
+    }
     libWrapper.register(
       "multiple-chat-tabs",
       target,
@@ -178,7 +181,7 @@ const debouncedRefreshAllTab = foundry.utils.debounce(() => {
   // core version check
   const api = game.modules.get("multiple-chat-tabs").api;
   if (ui.chat && ui.chat.element) {
-    if (api.isV12()) {
+    if (api.isV11() || api.isV12()) {
       MultipleChatTabs.refreshTabUI(ui.chat.element[0]);
     } else {
       MultipleChatTabs.refreshTabUI(ui.chat.element);
@@ -186,7 +189,7 @@ const debouncedRefreshAllTab = foundry.utils.debounce(() => {
   }
   Object.values(ui.windows).forEach((app) => {
     if (app.id.startsWith("chat-popout") && app.element) {
-      if (api.isV12()) {
+      if (api.isV11() || api.isV12()) {
         MultipleChatTabs.refreshTabUI(app.element[0]);
       } else {
         MultipleChatTabs.refreshTabUI(app.element);

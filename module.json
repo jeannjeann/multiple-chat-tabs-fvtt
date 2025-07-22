@@ -11,7 +11,7 @@
   "readme": "README.md",
   "version": "1.1.1",
   "compatibility": {
-    "minimum": "12",
+    "minimum": "11",
     "verified": "12.343"
   },
   "esmodules": [

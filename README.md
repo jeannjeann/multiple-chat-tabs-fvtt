@@ -1,6 +1,6 @@
 # Multiple Chat Tabs (for FoundryVTT)
 
-<!--- ![Foundry v11](https://img.shields.io/badge/foundry-v11-green) --->
+![Foundry v11](https://img.shields.io/badge/foundry-v11-green)
 ![Foundry v12](https://img.shields.io/badge/foundry-v12-green)
 ![Foundry v13](https://img.shields.io/badge/foundry-v13-green)
 
@@ -59,6 +59,10 @@ In 'Install Module' window of Foundry VTT's 'Add-on Modules', paste the above 'M
 
 
 # CHANGELOG
+
+## 1.2.0
+- support v11
+- fix default tabID
 
 ## 1.1.1
 - bug fix

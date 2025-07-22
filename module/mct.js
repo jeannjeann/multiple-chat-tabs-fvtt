@@ -11,16 +11,19 @@ Hooks.once("init", async function () {
   const MODULE_ID = "multiple-chat-tabs";
   game.modules.get(MODULE_ID).api = {
     // core version check
-    isV12: () => !foundry.utils.isNewerVersion(game.version, 13),
+    isV11: () => game.version.startsWith("11."),
+    isV12: () => game.version.startsWith("12."),
   };
 
   // CSS load
   const api = game.modules.get(MODULE_ID).api;
-  const useV12Css = api.isV12();
 
-  const cssFile = useV12Css
-    ? `modules/${MODULE_ID}/css/v12mct.css`
-    : `modules/${MODULE_ID}/css/mct.css`;
+  let cssFile;
+  if (api.isV11() || api.isV12()) {
+    cssFile = `modules/${MODULE_ID}/css/v12mct.css`;
+  } else {
+    cssFile = `modules/${MODULE_ID}/css/mct.css`;
+  }
 
   const link = document.createElement("link");
   link.rel = "stylesheet";
@@ -36,7 +39,7 @@ Hooks.once("init", async function () {
   });
 
   // hook by core version
-  if (api.isV12()) {
+  if (api.isV11() || api.isV12()) {
     Hooks.on("renderChatMessage", (message, html, data) => {
       const htmlElement = html[0] || html;
       MultipleChatTabs.applyFilterToMessage(
@@ -71,7 +74,7 @@ Hooks.once("ready", function () {
     if (ui.chat && ui.chat.element) {
       // core version check
       let mainChatElement;
-      if (api.isV12()) {
+      if (api.isV11() || api.isV12()) {
         mainChatElement = ui.chat.element[0];
       } else {
         mainChatElement = ui.chat.element;
@@ -100,7 +103,7 @@ Hooks.once("ready", function () {
         .forEach((popout) => {
           // core version check
           let popoutScope;
-          if (api.isV12()) {
+          if (api.isV11() || api.isV12()) {
             popoutScope = popout.element[0];
           } else {
             popoutScope = popout.element;
@@ -153,7 +156,7 @@ Hooks.once("ready", function () {
   });
 
   if (ui.chat && ui.chat.element) {
-    if (api.isV12()) {
+    if (api.isV11() || api.isV12()) {
       MultipleChatTabs.resizeObserver.observe(ui.chat.element[0]);
     } else {
       MultipleChatTabs.resizeObserver.observe(ui.chat.element);
@@ -163,7 +166,7 @@ Hooks.once("ready", function () {
   Object.values(ui.windows)
     .filter((w) => w.id.startsWith("chat-popout") && w.element)
     .forEach((popout) => {
-      if (api.isV12()) {
+      if (api.isV11() || api.isV12()) {
         MultipleChatTabs.resizeObserver.observe(popout.element[0]);
       } else {
         MultipleChatTabs.resizeObserver.observe(popout.element);
@@ -175,7 +178,7 @@ Hooks.once("ready", function () {
     const api = game.modules.get("multiple-chat-tabs").api;
     setTimeout(() => {
       let element;
-      if (api.isV12()) {
+      if (api.isV11() || api.isV12()) {
         element = ui.chat.element[0];
       } else {
         element = ui.chat.element;
@@ -227,7 +230,7 @@ Hooks.on("renderChatLog", async (app, html, data) => {
 
   // Observe popout
   if (MultipleChatTabs.resizeObserver) {
-    if (api.isV12()) {
+    if (api.isV11() || api.isV12()) {
       MultipleChatTabs.resizeObserver.observe(html[0]);
     } else {
       MultipleChatTabs.resizeObserver.observe(html);
@@ -340,7 +343,7 @@ Hooks.on("createChatMessage", async (message) => {
       const windowScopes = [];
       if (ui.chat.element) {
         // core version check
-        if (api.isV12()) {
+        if (api.isV11() || api.isV12()) {
           windowScopes.push(ui.chat.element[0]);
         } else {
           windowScopes.push(ui.chat.element);
@@ -350,7 +353,7 @@ Hooks.on("createChatMessage", async (message) => {
         .filter((w) => w.id.startsWith("chat-popout") && w.element)
         .forEach((w) => {
           // core version check
-          if (api.isV12()) {
+          if (api.isV11() || api.isV12()) {
             windowScopes.push(w.element[0]);
           } else {
             windowScopes.push(w.element);
@@ -399,7 +402,7 @@ Hooks.on("updateChatMessage", (message, data, options) => {
     const scopes = [];
     if (ui.chat.element) {
       // core version check
-      if (api.isV12()) {
+      if (api.isV11() || api.isV12()) {
         scopes.push(ui.chat.element[0]);
       } else {
         scopes.push(ui.chat.element);
@@ -409,7 +412,7 @@ Hooks.on("updateChatMessage", (message, data, options) => {
       .filter((w) => w.id.startsWith("chat-popout") && w.element)
       .forEach((w) => {
         // core version check
-        if (api.isV12()) {
+        if (api.isV11() || api.isV12()) {
           scopes.push(w.element[0]);
         } else {
           scopes.push(w.element);
@@ -441,7 +444,7 @@ Hooks.on("deleteChatMessage", (message, options, userId) => {
     const scopes = [];
     if (ui.chat.element) {
       // core version check
-      if (api.isV12()) {
+      if (api.isV11() || api.isV12()) {
         scopes.push(ui.chat.element[0]);
       } else {
         scopes.push(ui.chat.element);
@@ -451,7 +454,7 @@ Hooks.on("deleteChatMessage", (message, options, userId) => {
       .filter((w) => w.id.startsWith("chat-popout") && w.element)
       .forEach((w) => {
         // core version check
-        if (api.isV12()) {
+        if (api.isV11() || api.isV12()) {
           scopes.push(w.element[0]);
         } else {
           scopes.push(w.element);
@@ -520,7 +523,7 @@ Hooks.on("preCreateChatMessage", (message, data, options, userId) => {
 
 Hooks.on("closeChatPopout", (app) => {
   const api = game.modules.get("multiple-chat-tabs").api;
-  if (MultipleChatTabs.resizeObserver && api.isV12()) {
+  if (MultipleChatTabs.resizeObserver && (api.isV11() || api.isV12())) {
     if (app.element && app.element[0]) {
       MultipleChatTabs.resizeObserver.unobserve(app.element[0]);
     }
@@ -536,7 +539,7 @@ Hooks.on("closeChatPopout", (app) => {
 
 Hooks.on("closeApplication", (app) => {
   const api = game.modules.get("multiple-chat-tabs").api;
-  if (MultipleChatTabs.resizeObserver && !api.isV12()) {
+  if (MultipleChatTabs.resizeObserver && !(api.isV11() || api.isV12())) {
     if (app.id.startsWith("chat-popout") && app.element) {
       MultipleChatTabs.resizeObserver.unobserve(app.element);
     }
@@ -556,7 +559,7 @@ function _requestCheckAllWin() {
   if (ui.chat.element) {
     // core version check
     let element;
-    if (api.isV12()) {
+    if (api.isV11() || api.isV12()) {
       element = ui.chat.element[0];
     } else {
       element = ui.chat.element;
@@ -569,7 +572,7 @@ function _requestCheckAllWin() {
     .forEach((popout) => {
       // core version check
       let element;
-      if (api.isV12()) {
+      if (api.isV11() || api.isV12()) {
         element = popout.element[0];
       } else {
         element = popout.element;

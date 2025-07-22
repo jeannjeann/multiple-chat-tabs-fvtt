@@ -6,15 +6,28 @@ export class MessageFilter {
    * @returns {string}
    */
   static getMessageType(message) {
+    const api = game.modules.get("multiple-chat-tabs").api;
     if (message.isRoll) return "roll";
-    switch (message.style) {
-      case CONST.CHAT_MESSAGE_STYLES.IC:
-        return "ic";
-      case CONST.CHAT_MESSAGE_STYLES.OOC:
-        return "ooc";
-      default:
-        // OTHER include EMOTE, WHISPER, etc.
-        return "other";
+
+    // Core version check
+    if (api.isV11()) {
+      switch (message.type) {
+        case CONST.CHAT_MESSAGE_TYPES.IC:
+          return "ic";
+        case CONST.CHAT_MESSAGE_TYPES.OOC:
+          return "ooc";
+        default:
+          return "other";
+      }
+    } else {
+      switch (message.style) {
+        case CONST.CHAT_MESSAGE_STYLES.IC:
+          return "ic";
+        case CONST.CHAT_MESSAGE_STYLES.OOC:
+          return "ooc";
+        default:
+          return "other";
+      }
     }
   }
 

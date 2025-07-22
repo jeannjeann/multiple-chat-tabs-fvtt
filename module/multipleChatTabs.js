@@ -101,7 +101,7 @@ export class MultipleChatTabs {
 
     // core version check
     let tabsHtml;
-    if (api.isV12()) {
+    if (api.isV11() || api.isV12()) {
       tabsHtml = await renderTemplate(
         "modules/multiple-chat-tabs/templates/chat-tabs.hbs",
         { tabs: processedTabs, showCount: showCount, isGM: isGM }
@@ -114,7 +114,7 @@ export class MultipleChatTabs {
     }
 
     // core version check
-    if (api.isV12()) {
+    if (api.isV11() || api.isV12()) {
       const chatLog = html.querySelector("#chat-log");
       chatLog?.insertAdjacentHTML("afterend", tabsHtml);
     } else {
@@ -610,7 +610,7 @@ export class MultipleChatTabs {
     // core version check
     const api = game.modules.get("multiple-chat-tabs").api;
     let messageContainer;
-    if (api.isV12()) {
+    if (api.isV11() || api.isV12()) {
       messageContainer = scope.querySelector("#chat-log");
     } else {
       messageContainer = scope.querySelector("ol.chat-log");
