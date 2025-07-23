@@ -288,12 +288,20 @@ Hooks.on("renderChatLog", async (app, html, data) => {
 });
 
 Hooks.on("createChatMessage", async (message) => {
+  const api = game.modules.get("multiple-chat-tabs").api;
   // Whisper tab check
   const autoWhisper = game.settings.get("multiple-chat-tabs", "autoWhisperTab");
   if (autoWhisper && message.whisper.length > 0 && game.user.isGM) {
     const allTabs = MultipleChatTabs.getTabs();
+    let authorId;
+    // core version check
+    if (api.isV11() || !message.author) {
+      authorId = message.user?.id;
+    } else {
+      authorId = message.author.id;
+    }
     const whisperGroup = new Set(
-      [message.author?.id, ...message.whisper].filter(Boolean)
+      [authorId, ...message.whisper].filter(Boolean)
     );
 
     const matchTab = allTabs.some((tab) => {

@@ -38,11 +38,20 @@ export class MessageFilter {
    * @returns {Set<string>}
    */
   static getVisibleTabsForMessage(message, allTabs) {
+    const api = game.modules.get("multiple-chat-tabs").api;
     if (!message || allTabs.length === 0) return new Set();
 
     if (message.whisper.length > 0) {
+      let authorId;
+      // core version check
+      if (api.isV11() || !message.author) {
+        authorId = message.user?.id;
+      } else {
+        authorId = message.author.id;
+      }
+
       const whisperGroup = new Set(
-        [message.author?.id, ...message.whisper].filter(Boolean)
+        [authorId, ...message.whisper].filter(Boolean)
       );
 
       const matchingWhisperTabs = allTabs.filter((tab) => {
@@ -60,6 +69,7 @@ export class MessageFilter {
           [...whisperGroup].every((id) => tabTargets.has(id))
         );
       });
+
       if (matchingWhisperTabs.length > 0) {
         return new Set(matchingWhisperTabs.map((t) => t.id));
       }
