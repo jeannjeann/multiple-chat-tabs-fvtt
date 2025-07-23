@@ -434,6 +434,15 @@ export class MultipleChatTabs {
       clickedTab.querySelector(".unread-indicator")?.remove();
     }
 
+    // Scroll to bottom button fix for v11
+    // core version check
+    const api = game.modules.get("multiple-chat-tabs").api;
+    if (api.isV11()) {
+      const jumpToBottomButton =
+        nativeAppElement.querySelector(".jump-to-bottom");
+      if (jumpToBottomButton) jumpToBottomButton.classList.add("hidden");
+    }
+
     // Loadable check
     this._requestLoad(nativeAppElement);
 
@@ -1001,6 +1010,28 @@ export class MultipleChatTabs {
         }
       } else {
         loadButton.style.display = "none";
+      }
+    }
+
+    // Scroll to bottom button fix for v11
+    // core version check
+    const api = game.modules.get("multiple-chat-tabs").api;
+    if (api.isV11()) {
+      const jumpToBottomButton = scope.querySelector(".jump-to-bottom");
+      const chatLog = scope.querySelector("#chat-log");
+
+      if (jumpToBottomButton && chatLog) {
+        const isOverflowing = chatLog.scrollHeight > chatLog.clientHeight;
+        let shouldBeVisible;
+        if (!isOverflowing) {
+          shouldBeVisible = false;
+        } else {
+          const isAtBottom =
+            chatLog.scrollTop + chatLog.clientHeight >=
+            chatLog.scrollHeight - 20;
+          shouldBeVisible = !isAtBottom;
+        }
+        jumpToBottomButton.classList.toggle("hidden", !shouldBeVisible);
       }
     }
   }
