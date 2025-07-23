@@ -6,15 +6,28 @@ export class MessageFilter {
    * @returns {string}
    */
   static getMessageType(message) {
+    const api = game.modules.get("multiple-chat-tabs").api;
     if (message.isRoll) return "roll";
-    switch (message.style) {
-      case CONST.CHAT_MESSAGE_STYLES.IC:
-        return "ic";
-      case CONST.CHAT_MESSAGE_STYLES.OOC:
-        return "ooc";
-      default:
-        // OTHER include EMOTE, WHISPER, etc.
-        return "other";
+
+    // core version check
+    if (api.isV11()) {
+      switch (message.type) {
+        case CONST.CHAT_MESSAGE_TYPES.IC:
+          return "ic";
+        case CONST.CHAT_MESSAGE_TYPES.OOC:
+          return "ooc";
+        default:
+          return "other";
+      }
+    } else {
+      switch (message.style) {
+        case CONST.CHAT_MESSAGE_STYLES.IC:
+          return "ic";
+        case CONST.CHAT_MESSAGE_STYLES.OOC:
+          return "ooc";
+        default:
+          return "other";
+      }
     }
   }
 
@@ -25,11 +38,20 @@ export class MessageFilter {
    * @returns {Set<string>}
    */
   static getVisibleTabsForMessage(message, allTabs) {
+    const api = game.modules.get("multiple-chat-tabs").api;
     if (!message || allTabs.length === 0) return new Set();
 
     if (message.whisper.length > 0) {
+      let authorId;
+      // core version check
+      if (api.isV11() || !message.author) {
+        authorId = message.user?.id;
+      } else {
+        authorId = message.author.id;
+      }
+
       const whisperGroup = new Set(
-        [message.author?.id, ...message.whisper].filter(Boolean)
+        [authorId, ...message.whisper].filter(Boolean)
       );
 
       const matchingWhisperTabs = allTabs.filter((tab) => {
@@ -47,6 +69,7 @@ export class MessageFilter {
           [...whisperGroup].every((id) => tabTargets.has(id))
         );
       });
+
       if (matchingWhisperTabs.length > 0) {
         return new Set(matchingWhisperTabs.map((t) => t.id));
       }

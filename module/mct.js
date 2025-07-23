@@ -11,16 +11,19 @@ Hooks.once("init", async function () {
   const MODULE_ID = "multiple-chat-tabs";
   game.modules.get(MODULE_ID).api = {
     // core version check
-    isV12: () => !foundry.utils.isNewerVersion(game.version, 13),
+    isV11: () => game.version.startsWith("11."),
+    isV12: () => game.version.startsWith("12."),
   };
 
   // CSS load
   const api = game.modules.get(MODULE_ID).api;
-  const useV12Css = api.isV12();
 
-  const cssFile = useV12Css
-    ? `modules/${MODULE_ID}/css/v12mct.css`
-    : `modules/${MODULE_ID}/css/mct.css`;
+  let cssFile;
+  if (api.isV11() || api.isV12()) {
+    cssFile = `modules/${MODULE_ID}/css/v12mct.css`;
+  } else {
+    cssFile = `modules/${MODULE_ID}/css/mct.css`;
+  }
 
   const link = document.createElement("link");
   link.rel = "stylesheet";
@@ -36,7 +39,7 @@ Hooks.once("init", async function () {
   });
 
   // hook by core version
-  if (api.isV12()) {
+  if (api.isV11() || api.isV12()) {
     Hooks.on("renderChatMessage", (message, html, data) => {
       const htmlElement = html[0] || html;
       MultipleChatTabs.applyFilterToMessage(
@@ -50,6 +53,20 @@ Hooks.once("init", async function () {
         html,
         MultipleChatTabs.activeFilter
       );
+    });
+  }
+
+  // chatMessage hook for v11
+  if (api.isV11()) {
+    Hooks.on("chatMessage", (chatLog, messageText, chatData) => {
+      const allTabs = MultipleChatTabs.getTabs();
+      const activeTabId = MultipleChatTabs.activeFilter || allTabs[0]?.id;
+      if (!activeTabId) return true;
+
+      const activeTab = allTabs.find((t) => t.id === activeTabId);
+      if (!activeTab) return true;
+
+      // if you need to change something of message at v11
     });
   }
 });
@@ -67,62 +84,70 @@ Hooks.once("setup", function () {
 Hooks.once("ready", function () {
   const MODULE_ID = "multiple-chat-tabs";
   const api = game.modules.get(MODULE_ID).api;
-  const debouncedResizeHandler = foundry.utils.debounce(() => {
-    if (ui.chat && ui.chat.element) {
-      // core version check
-      let mainChatElement;
-      if (api.isV12()) {
-        mainChatElement = ui.chat.element[0];
-      } else {
-        mainChatElement = ui.chat.element;
-      }
-      if (!mainChatElement) return;
-
-      MultipleChatTabs.updateScrollButtons(mainChatElement);
-      MultipleChatTabs._adjustScrollButtonPosition(mainChatElement);
-      // Update oldestLoadMessage
-      const mainScope = mainChatElement;
-      const mainTabId = MultipleChatTabs.activeFilter;
-      if (mainTabId) {
-        const windowId = mainScope.id;
-        if (!MultipleChatTabs.oldestLoadMessage[windowId]) {
-          MultipleChatTabs.oldestLoadMessage[windowId] = {};
+  const debouncedResizeHandler = (() => {
+    const resizeFn = () => {
+      if (ui.chat && ui.chat.element) {
+        // core version check
+        let mainChatElement;
+        if (api.isV11() || api.isV12()) {
+          mainChatElement = ui.chat.element[0];
+        } else {
+          mainChatElement = ui.chat.element;
         }
-        MultipleChatTabs.oldestLoadMessage[windowId][mainTabId] =
-          MultipleChatTabs.getOldestLoadMessage(mainTabId, mainScope);
-      }
-      // Loadable check
-      MultipleChatTabs._requestLoad(mainScope);
+        if (!mainChatElement) return;
 
-      // Popup
-      Object.values(ui.windows)
-        .filter((w) => w.id.startsWith("chat-popout") && w.element)
-        .forEach((popout) => {
-          // core version check
-          let popoutScope;
-          if (api.isV12()) {
-            popoutScope = popout.element[0];
-          } else {
-            popoutScope = popout.element;
+        MultipleChatTabs.updateScrollButtons(mainChatElement);
+        MultipleChatTabs._adjustScrollButtonPosition(mainChatElement);
+        // Update oldestLoadMessage
+        const mainScope = mainChatElement;
+        const mainTabId = MultipleChatTabs.activeFilter;
+        if (mainTabId) {
+          const windowId = mainScope.id;
+          if (!MultipleChatTabs.oldestLoadMessage[windowId]) {
+            MultipleChatTabs.oldestLoadMessage[windowId] = {};
           }
-          if (!popoutScope) return;
-          const popoutTabId = MultipleChatTabs.activeFilter;
-          MultipleChatTabs.updateScrollButtons(popoutScope);
-          MultipleChatTabs._adjustScrollButtonPosition(popoutScope);
-          // Update oldestLoadMessage
-          if (popoutTabId) {
-            const windowId = popoutScope.id;
-            if (!MultipleChatTabs.oldestLoadMessage[windowId]) {
-              MultipleChatTabs.oldestLoadMessage[windowId] = {};
+          MultipleChatTabs.oldestLoadMessage[windowId][mainTabId] =
+            MultipleChatTabs.getOldestLoadMessage(mainTabId, mainScope);
+        }
+        // Loadable check
+        MultipleChatTabs._requestLoad(mainScope);
+
+        // Popup
+        Object.values(ui.windows)
+          .filter((w) => w.id.startsWith("chat-popout") && w.element)
+          .forEach((popout) => {
+            // core version check
+            let popoutScope;
+            if (api.isV11() || api.isV12()) {
+              popoutScope = popout.element[0];
+            } else {
+              popoutScope = popout.element;
             }
-            MultipleChatTabs.oldestLoadMessage[windowId][popoutTabId] =
-              MultipleChatTabs.getOldestLoadMessage(popoutTabId, popoutScope);
-          }
-          // Loadable check
-          MultipleChatTabs._requestLoad(popoutScope);
-        });
+            if (!popoutScope) return;
+            const popoutTabId = MultipleChatTabs.activeFilter;
+            MultipleChatTabs.updateScrollButtons(popoutScope);
+            MultipleChatTabs._adjustScrollButtonPosition(popoutScope);
+            // Update oldestLoadMessage
+            if (popoutTabId) {
+              const windowId = popoutScope.id;
+              if (!MultipleChatTabs.oldestLoadMessage[windowId]) {
+                MultipleChatTabs.oldestLoadMessage[windowId] = {};
+              }
+              MultipleChatTabs.oldestLoadMessage[windowId][popoutTabId] =
+                MultipleChatTabs.getOldestLoadMessage(popoutTabId, popoutScope);
+            }
+            // Loadable check
+            MultipleChatTabs._requestLoad(popoutScope);
+          });
+      }
+    };
+    // core version check
+    if (api.isV11()) {
+      return debounce(resizeFn, 250);
+    } else {
+      return foundry.utils.debounce(resizeFn, 250);
     }
-  }, 250);
+  })();
   window.addEventListener("resize", debouncedResizeHandler);
 
   /* Monkey Patch
@@ -153,7 +178,7 @@ Hooks.once("ready", function () {
   });
 
   if (ui.chat && ui.chat.element) {
-    if (api.isV12()) {
+    if (api.isV11() || api.isV12()) {
       MultipleChatTabs.resizeObserver.observe(ui.chat.element[0]);
     } else {
       MultipleChatTabs.resizeObserver.observe(ui.chat.element);
@@ -163,7 +188,7 @@ Hooks.once("ready", function () {
   Object.values(ui.windows)
     .filter((w) => w.id.startsWith("chat-popout") && w.element)
     .forEach((popout) => {
-      if (api.isV12()) {
+      if (api.isV11() || api.isV12()) {
         MultipleChatTabs.resizeObserver.observe(popout.element[0]);
       } else {
         MultipleChatTabs.resizeObserver.observe(popout.element);
@@ -175,7 +200,7 @@ Hooks.once("ready", function () {
     const api = game.modules.get("multiple-chat-tabs").api;
     setTimeout(() => {
       let element;
-      if (api.isV12()) {
+      if (api.isV11() || api.isV12()) {
         element = ui.chat.element[0];
       } else {
         element = ui.chat.element;
@@ -205,17 +230,28 @@ Hooks.on("renderChatLog", async (app, html, data) => {
   const chatLog = htmlElement.querySelector("#chat-log");
   if (chatLog) {
     // Chat scroll listener
-    const throttledScrollHandler = foundry.utils.throttle(
-      (event) => MultipleChatTabs._onScroll(event),
-      200
-    );
+    const scrollHandlerFn = (event) => MultipleChatTabs._onScroll(event);
+    const throttledScrollHandler = (() => {
+      // core version check
+      if (api.isV11()) {
+        return throttle(scrollHandlerFn, 200);
+      } else {
+        return foundry.utils.throttle(scrollHandlerFn, 200);
+      }
+    })();
     chatLog.addEventListener("scroll", throttledScrollHandler);
 
     // Load message listener
-    const debouncedMutationHandler = foundry.utils.debounce(
-      (mutations, observer) => MultipleChatTabs._updateLoaedMessage(mutations),
-      100
-    );
+    const debouncedMutationHandler = (() => {
+      const mutationFn = (mutations, observer) =>
+        MultipleChatTabs._updateLoaedMessage(mutations);
+      // core version check
+      if (api.isV11()) {
+        return debounce(mutationFn, 100);
+      } else {
+        return foundry.utils.debounce(mutationFn, 100);
+      }
+    })();
     const observer = new MutationObserver(debouncedMutationHandler);
     observer.observe(chatLog, {
       childList: true,
@@ -227,7 +263,7 @@ Hooks.on("renderChatLog", async (app, html, data) => {
 
   // Observe popout
   if (MultipleChatTabs.resizeObserver) {
-    if (api.isV12()) {
+    if (api.isV11() || api.isV12()) {
       MultipleChatTabs.resizeObserver.observe(html[0]);
     } else {
       MultipleChatTabs.resizeObserver.observe(html);
@@ -252,12 +288,20 @@ Hooks.on("renderChatLog", async (app, html, data) => {
 });
 
 Hooks.on("createChatMessage", async (message) => {
+  const api = game.modules.get("multiple-chat-tabs").api;
   // Whisper tab check
   const autoWhisper = game.settings.get("multiple-chat-tabs", "autoWhisperTab");
   if (autoWhisper && message.whisper.length > 0 && game.user.isGM) {
     const allTabs = MultipleChatTabs.getTabs();
+    let authorId;
+    // core version check
+    if (api.isV11() || !message.author) {
+      authorId = message.user?.id;
+    } else {
+      authorId = message.author.id;
+    }
     const whisperGroup = new Set(
-      [message.author?.id, ...message.whisper].filter(Boolean)
+      [authorId, ...message.whisper].filter(Boolean)
     );
 
     const matchTab = allTabs.some((tab) => {
@@ -291,7 +335,15 @@ Hooks.on("createChatMessage", async (message) => {
       }
 
       const newTab = {
-        id: `tab-${foundry.utils.randomID(16)}`,
+        id: (() => {
+          const api = game.modules.get("multiple-chat-tabs").api;
+          // core version check
+          if (api.isV11()) {
+            return `tab-${randomID(16)}`;
+          } else {
+            return `tab-${foundry.utils.randomID(16)}`;
+          }
+        })(),
         label: newLabel,
         isDefault: false,
         showAllMessages: false,
@@ -340,7 +392,7 @@ Hooks.on("createChatMessage", async (message) => {
       const windowScopes = [];
       if (ui.chat.element) {
         // core version check
-        if (api.isV12()) {
+        if (api.isV11() || api.isV12()) {
           windowScopes.push(ui.chat.element[0]);
         } else {
           windowScopes.push(ui.chat.element);
@@ -350,7 +402,7 @@ Hooks.on("createChatMessage", async (message) => {
         .filter((w) => w.id.startsWith("chat-popout") && w.element)
         .forEach((w) => {
           // core version check
-          if (api.isV12()) {
+          if (api.isV11() || api.isV12()) {
             windowScopes.push(w.element[0]);
           } else {
             windowScopes.push(w.element);
@@ -399,7 +451,7 @@ Hooks.on("updateChatMessage", (message, data, options) => {
     const scopes = [];
     if (ui.chat.element) {
       // core version check
-      if (api.isV12()) {
+      if (api.isV11() || api.isV12()) {
         scopes.push(ui.chat.element[0]);
       } else {
         scopes.push(ui.chat.element);
@@ -409,7 +461,7 @@ Hooks.on("updateChatMessage", (message, data, options) => {
       .filter((w) => w.id.startsWith("chat-popout") && w.element)
       .forEach((w) => {
         // core version check
-        if (api.isV12()) {
+        if (api.isV11() || api.isV12()) {
           scopes.push(w.element[0]);
         } else {
           scopes.push(w.element);
@@ -441,7 +493,7 @@ Hooks.on("deleteChatMessage", (message, options, userId) => {
     const scopes = [];
     if (ui.chat.element) {
       // core version check
-      if (api.isV12()) {
+      if (api.isV11() || api.isV12()) {
         scopes.push(ui.chat.element[0]);
       } else {
         scopes.push(ui.chat.element);
@@ -451,7 +503,7 @@ Hooks.on("deleteChatMessage", (message, options, userId) => {
       .filter((w) => w.id.startsWith("chat-popout") && w.element)
       .forEach((w) => {
         // core version check
-        if (api.isV12()) {
+        if (api.isV11() || api.isV12()) {
           scopes.push(w.element[0]);
         } else {
           scopes.push(w.element);
@@ -473,6 +525,7 @@ Hooks.on("deleteChatMessage", (message, options, userId) => {
 });
 
 Hooks.on("preCreateChatMessage", (message, data, options, userId) => {
+  const api = game.modules.get("multiple-chat-tabs").api;
   const allTabs = MultipleChatTabs.getTabs();
   const activeTabId = MultipleChatTabs.activeFilter || allTabs[0]?.id;
 
@@ -493,25 +546,50 @@ Hooks.on("preCreateChatMessage", (message, data, options, userId) => {
         targets.push(game.user.id);
       }
       if (targets.length > 0) {
-        updateData.whisper = targets;
-        updateData.style = CONST.CHAT_MESSAGE_STYLES.OTHER;
-        updateData.speaker = {
-          scene: null,
-          actor: null,
-          token: null,
-          alias: undefined,
-        };
+        // core version check
+        if (api.isV11()) {
+          updateData.whisper = targets;
+          updateData.type = CONST.CHAT_MESSAGE_TYPES.WHISPER;
+          updateData.speaker = {
+            scene: null,
+            actor: null,
+            token: null,
+            alias: null,
+          };
+        } else {
+          updateData.whisper = targets;
+          updateData.style = CONST.CHAT_MESSAGE_STYLES.OTHER;
+          updateData.speaker = {
+            scene: null,
+            actor: null,
+            token: null,
+            alias: undefined,
+          };
+        }
       }
     } else if (activeTab?.forceOOC) {
       // Force OOC check
-      if (message.style === CONST.CHAT_MESSAGE_STYLES.IC) {
-        updateData.style = CONST.CHAT_MESSAGE_STYLES.OOC;
-        updateData.speaker = {
-          scene: null,
-          actor: null,
-          token: null,
-          alias: undefined,
-        };
+      // core version check
+      if (api.isV11()) {
+        if (message.type === CONST.CHAT_MESSAGE_TYPES.IC) {
+          updateData.type = CONST.CHAT_MESSAGE_TYPES.OOC;
+          updateData.speaker = {
+            scene: null,
+            actor: null,
+            token: null,
+            alias: null,
+          };
+        }
+      } else {
+        if (message.style === CONST.CHAT_MESSAGE_STYLES.IC) {
+          updateData.style = CONST.CHAT_MESSAGE_STYLES.OOC;
+          updateData.speaker = {
+            scene: null,
+            actor: null,
+            token: null,
+            alias: undefined,
+          };
+        }
       }
     }
   }
@@ -520,7 +598,7 @@ Hooks.on("preCreateChatMessage", (message, data, options, userId) => {
 
 Hooks.on("closeChatPopout", (app) => {
   const api = game.modules.get("multiple-chat-tabs").api;
-  if (MultipleChatTabs.resizeObserver && api.isV12()) {
+  if (MultipleChatTabs.resizeObserver && (api.isV11() || api.isV12())) {
     if (app.element && app.element[0]) {
       MultipleChatTabs.resizeObserver.unobserve(app.element[0]);
     }
@@ -536,7 +614,7 @@ Hooks.on("closeChatPopout", (app) => {
 
 Hooks.on("closeApplication", (app) => {
   const api = game.modules.get("multiple-chat-tabs").api;
-  if (MultipleChatTabs.resizeObserver && !api.isV12()) {
+  if (MultipleChatTabs.resizeObserver && !(api.isV11() || api.isV12())) {
     if (app.id.startsWith("chat-popout") && app.element) {
       MultipleChatTabs.resizeObserver.unobserve(app.element);
     }
@@ -556,7 +634,7 @@ function _requestCheckAllWin() {
   if (ui.chat.element) {
     // core version check
     let element;
-    if (api.isV12()) {
+    if (api.isV11() || api.isV12()) {
       element = ui.chat.element[0];
     } else {
       element = ui.chat.element;
@@ -569,11 +647,43 @@ function _requestCheckAllWin() {
     .forEach((popout) => {
       // core version check
       let element;
-      if (api.isV12()) {
+      if (api.isV11() || api.isV12()) {
         element = popout.element[0];
       } else {
         element = popout.element;
       }
       if (element) MultipleChatTabs._requestLoad(element);
     });
+}
+
+/**
+ * Debounce for v11
+ * @param {Function} fn
+ * @param {number} delay
+ * @returns {Function}
+ */
+function debounce(fn, delay) {
+  let timeout;
+  return function (...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
+/**
+ * Throttle for v11
+ * @param {Function} func
+ * @param {number}   limit
+ * @returns {Function}
+ */
+function throttle(func, limit) {
+  let inThrottle;
+  return function (...args) {
+    const context = this;
+    if (!inThrottle) {
+      func.apply(context, args);
+      inThrottle = true;
+      setTimeout(() => (inThrottle = false), limit);
+    }
+  };
 }

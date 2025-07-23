@@ -5,7 +5,9 @@ import { MultipleChatTabs } from "./multipleChatTabs.js";
 // TabSettings Class
 export class TabSettings extends FormApplication {
   static get defaultOptions() {
-    return foundry.utils.mergeObject(super.defaultOptions, {
+    const api = game.modules.get("multiple-chat-tabs")?.api;
+    const baseOptions = super.defaultOptions;
+    const newOptions = {
       title: game.i18n.localize("MCT.settings.windowTitle"),
       id: "multiple-chat-tabs-settings",
       template: "modules/multiple-chat-tabs/templates/tab-settings.hbs",
@@ -17,7 +19,16 @@ export class TabSettings extends FormApplication {
       submitOnChange: false,
       submitOnClose: false,
       closeOnSubmit: false,
-    });
+    };
+    // core version check
+    if (
+      (api && api.isV11()) ||
+      (typeof game !== "undefined" && game.version.startsWith("11."))
+    ) {
+      return mergeObject(baseOptions, newOptions);
+    } else {
+      return foundry.utils.mergeObject(baseOptions, newOptions);
+    }
   }
 
   getData(options) {
@@ -135,7 +146,15 @@ export class TabSettings extends FormApplication {
     }
 
     const newTab = {
-      id: `tab-${foundry.utils.randomID(16)}`,
+      id: (() => {
+        const api = game.modules.get("multiple-chat-tabs").api;
+        // core version check
+        if (api.isV11()) {
+          return `tab-${randomID(16)}`;
+        } else {
+          return `tab-${foundry.utils.randomID(16)}`;
+        }
+      })(),
       label: newLabel,
       isDefault: false,
       showAllMessages: false,
@@ -304,14 +323,25 @@ export class TabDetailSettings extends FormApplication {
   }
 
   static get defaultOptions() {
-    return foundry.utils.mergeObject(super.defaultOptions, {
+    const api = game.modules.get("multiple-chat-tabs")?.api;
+    const baseOptions = super.defaultOptions;
+    const newOptions = {
       title: game.i18n.localize("MCT.detailSettings.windowTitle"),
       id: "multiple-chat-tabs-detail-settings",
       template: "modules/multiple-chat-tabs/templates/tab-detail-settings.hbs",
       width: 550,
       height: 550,
       resizable: true,
-    });
+    };
+    // core version check
+    if (
+      (api && api.isV11()) ||
+      (typeof game !== "undefined" && game.version.startsWith("11."))
+    ) {
+      return mergeObject(baseOptions, newOptions);
+    } else {
+      return foundry.utils.mergeObject(baseOptions, newOptions);
+    }
   }
 
   getData(options) {
@@ -391,7 +421,14 @@ export class TabDetailSettings extends FormApplication {
     MultipleChatTabs.oldestMessage = {};
     MultipleChatTabs.oldestLoadMessage = {};
 
-    const expandedData = foundry.utils.expandObject(formData);
+    const api = game.modules.get("multiple-chat-tabs").api;
+    let expandedData;
+    // core version check
+    if (api.isV11()) {
+      expandedData = expandObject(formData);
+    } else {
+      expandedData = foundry.utils.expandObject(formData);
+    }
 
     // Save tab setting
     allTabs[tabIndex].label = expandedData.label;

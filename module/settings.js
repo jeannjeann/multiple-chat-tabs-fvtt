@@ -28,7 +28,7 @@ export function registerSettings() {
     config: true,
     restricted: true,
     type: Boolean,
-    default: false,
+    default: true,
     onChange: () => {
       MultipleChatTabs.oldestMessage = {};
       MultipleChatTabs.oldestLoadMessage = {};
@@ -79,7 +79,7 @@ export function registerSettings() {
     type: String,
     default: JSON.stringify([
       {
-        id: `tab-${foundry.utils.randomID(16)}`,
+        id: `tab-main`,
         label: game.i18n.localize("MCT.settings.defaults.main"),
         isDefault: true,
         showAllMessages: false,
@@ -94,7 +94,7 @@ export function registerSettings() {
         whisperTargets: [],
       },
       {
-        id: `tab-${foundry.utils.randomID(16)}`,
+        id: `tab-roll`,
         label: game.i18n.localize("MCT.settings.defaults.roll"),
         isDefault: false,
         showAllMessages: false,
@@ -109,7 +109,7 @@ export function registerSettings() {
         whisperTargets: [],
       },
       {
-        id: `tab-${foundry.utils.randomID(16)}`,
+        id: `tab-sub`,
         label: game.i18n.localize("MCT.settings.defaults.sub"),
         isDefault: false,
         showAllMessages: false,
@@ -143,10 +143,13 @@ export function registerSettings() {
     const api = game.modules.get("multiple-chat-tabs").api;
 
     // core version check
-    const target = api.isV12()
-      ? "ChatLog.prototype.scrollBottom"
-      : "foundry.applications.sidebar.tabs.ChatLog.prototype.scrollBottom";
-
+    let target;
+    if (api.isV11() || api.isV12()) {
+      target = "ChatLog.prototype.scrollBottom";
+    } else {
+      target =
+        "foundry.applications.sidebar.tabs.ChatLog.prototype.scrollBottom";
+    }
     libWrapper.register(
       "multiple-chat-tabs",
       target,
@@ -173,25 +176,56 @@ export function registerSettings() {
   }
 }
 
+/**
+ * Debounce for v11
+ * @param {Function} fn
+ * @param {number} delay
+ * @returns {Function}
+ */
+function debounce(fn, delay) {
+  let timeout;
+  return function (...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
 // debounced RefreshTab
-const debouncedRefreshAllTab = foundry.utils.debounce(() => {
-  // core version check
-  const api = game.modules.get("multiple-chat-tabs").api;
-  if (ui.chat && ui.chat.element) {
-    if (api.isV12()) {
-      MultipleChatTabs.refreshTabUI(ui.chat.element[0]);
-    } else {
-      MultipleChatTabs.refreshTabUI(ui.chat.element);
-    }
-  }
-  Object.values(ui.windows).forEach((app) => {
-    if (app.id.startsWith("chat-popout") && app.element) {
-      if (api.isV12()) {
-        MultipleChatTabs.refreshTabUI(app.element[0]);
+const debouncedRefreshAllTab = (() => {
+  let debouncedFn = null;
+
+  const refreshFn = () => {
+    // core version check
+    const api = game.modules.get("multiple-chat-tabs").api;
+    if (ui.chat && ui.chat.element) {
+      if (api.isV11() || api.isV12()) {
+        MultipleChatTabs.refreshTabUI(ui.chat.element[0]);
       } else {
-        MultipleChatTabs.refreshTabUI(app.element);
+        MultipleChatTabs.refreshTabUI(ui.chat.element);
       }
     }
-  });
-}, 100);
+    Object.values(ui.windows).forEach((app) => {
+      if (app.id.startsWith("chat-popout") && app.element) {
+        if (api.isV11() || api.isV12()) {
+          MultipleChatTabs.refreshTabUI(app.element[0]);
+        } else {
+          MultipleChatTabs.refreshTabUI(app.element);
+        }
+      }
+    });
+  };
+
+  return function (...args) {
+    if (!debouncedFn) {
+      const api = game.modules.get("multiple-chat-tabs").api;
+      if (api.isV11()) {
+        debouncedFn = debounce(refreshFn, 100);
+      } else {
+        debouncedFn = foundry.utils.debounce(refreshFn, 100);
+      }
+    }
+    debouncedFn(...args);
+  };
+})();
+
 export { debouncedRefreshAllTab };
