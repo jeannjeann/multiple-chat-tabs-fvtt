@@ -628,6 +628,7 @@ Hooks.on("closeChatPopout", (app) => {
     app.element[0] &&
     MultipleChatTabs.popoutChatApps[app.element[0].id]
   ) {
+    delete MultipleChatTabs.windowStates[app.element[0].id];
     delete MultipleChatTabs.popoutChatApps[app.element[0].id];
   }
 });
@@ -644,6 +645,7 @@ Hooks.on("closeApplication", (app) => {
     app.element &&
     MultipleChatTabs.popoutChatApps[app.element.id]
   ) {
+    delete MultipleChatTabs.windowStates[app.element.id];
     delete MultipleChatTabs.popoutChatApps[app.element.id];
   }
 });
