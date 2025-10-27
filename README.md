@@ -52,7 +52,7 @@ In 'Install Module' window of Foundry VTT's 'Add-on Modules', paste the above 'M
 
 - 「Simple Message Window」モジュールと一緒にテキストセッションのお供にどうぞ！
 - リサイズ系のモジュールと組み合わせて使うとより便利ですよ。
-  - 「Sidebar and Window Resizer」「Popout!」「Popout Resizer（module.json改変必要）」など。
+  - 「Sidebar and Popout Resizer」「Popout!」など。
 - v11以降に対応（v13では一部警告は残存）。
 - ログの量があまりに大きいとパフォーマンスに悪影響が出る可能性があります。
 - タブ対応の簡易的なチャットログ出力機能も追加したいですが、未定です。

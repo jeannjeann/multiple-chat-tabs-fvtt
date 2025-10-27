@@ -42,17 +42,30 @@ Hooks.once("init", async function () {
   if (api.isV11() || api.isV12()) {
     Hooks.on("renderChatMessage", (message, html, data) => {
       const htmlElement = html[0] || html;
-      MultipleChatTabs.applyFilterToMessage(
-        htmlElement,
-        MultipleChatTabs.activeFilter
-      );
+      setTimeout(() => {
+        const appElement = htmlElement.closest("#chat, #chat-popout");
+        if (appElement) {
+          const windowActiveFilter = appElement.dataset.activeFilter;
+          if (windowActiveFilter) {
+            MultipleChatTabs.applyFilterToMessage(
+              htmlElement,
+              windowActiveFilter
+            );
+          }
+        }
+      }, 0);
     });
   } else {
     Hooks.on("renderChatMessageHTML", (message, html, data) => {
-      MultipleChatTabs.applyFilterToMessage(
-        html,
-        MultipleChatTabs.activeFilter
-      );
+      setTimeout(() => {
+        const appElement = html.closest("#chat, #chat-popout");
+        if (appElement) {
+          const windowActiveFilter = appElement.dataset.activeFilter;
+          if (windowActiveFilter) {
+            MultipleChatTabs.applyFilterToMessage(html, windowActiveFilter);
+          }
+        }
+      }, 0);
     });
   }
 
@@ -220,8 +233,38 @@ Hooks.once("ready", function () {
 Hooks.on("renderChatLog", async (app, html, data) => {
   const MODULE_ID = "multiple-chat-tabs";
   const api = game.modules.get(MODULE_ID).api;
-  const htmlElement = html?.jquery ? html[0] : html;
+  let htmlElement = html?.jquery ? html[0] : html;
   if (!htmlElement) return;
+
+  if (htmlElement.id === "chat-popout" && htmlElement.tagName === "DIV") {
+    const innerContainer = htmlElement.querySelector("section#chat-popout");
+    if (innerContainer) {
+      htmlElement = innerContainer;
+    }
+  }
+
+  // DEBUG--- イベントリスナー検証用コード ---
+  const chatForm = htmlElement.querySelector("#chat-form");
+  if (chatForm) {
+    chatForm.addEventListener(
+      "submit",
+      (event) => {
+        const form = event.currentTarget;
+        const appElement = form.closest("#chat, #chat-popout");
+        if (appElement) {
+          console.log(
+            `[MCT EVENT_LISTENER] Submit event fired in window: "${appElement.id}", Active Filter: "${appElement.dataset.activeFilter}"`
+          );
+        } else {
+          console.error(
+            "[MCT EVENT_LISTENER] Could not find parent app element from the form."
+          );
+        }
+      },
+      { capture: true }
+    ); // captureフェーズでイベントを捕捉
+  }
+  //
 
   if (app.id.startsWith("chat-popout")) {
     MultipleChatTabs.popoutChatApps[htmlElement.id] = app;
