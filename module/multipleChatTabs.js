@@ -44,6 +44,8 @@ export class MultipleChatTabs {
   static activeFilter = null;
   static oldestMessage = {};
   static oldestLoadMessage = {}; // { [windowId]: { [tabId]: messageId } }
+  static windowStates = {}; // { "windowId": "activeTabId" }
+  static activeSubmitFilter = null;
 
   /**
    * Refresh tab UI
@@ -73,11 +75,12 @@ export class MultipleChatTabs {
       return;
     }
 
-    let activeFilter = html.dataset.activeFilter || this.activeFilter;
+    let activeFilter = this.windowStates[html.id] || this.activeFilter;
     if (!tabs.some((t) => t.id === activeFilter)) {
       activeFilter = tabs[0]?.id || null;
     }
     html.dataset.activeFilter = activeFilter;
+    this.windowStates[html.id] = activeFilter;
     this.activeFilter = activeFilter;
 
     // Initialize default tab's property
@@ -399,6 +402,7 @@ export class MultipleChatTabs {
 
     const nativeAppElement = appElement.jquery ? appElement[0] : appElement;
     const clickedFilter = clickedTab.dataset.filter;
+    this.windowStates[nativeAppElement.id] = clickedFilter;
 
     if (nativeAppElement.dataset.activeFilter === clickedFilter) return;
 

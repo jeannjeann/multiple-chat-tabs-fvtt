@@ -143,16 +143,52 @@ export function registerSettings() {
     const api = game.modules.get("multiple-chat-tabs").api;
 
     // core version check
-    let target;
+    let processMessageTarget, scrollBottomTarget;
     if (api.isV11() || api.isV12()) {
-      target = "ChatLog.prototype.scrollBottom";
+      processMessageTarget = "ChatLog.prototype.processMessage";
+      scrollBottomTarget = "ChatLog.prototype.scrollBottom";
     } else {
-      target =
+      processMessageTarget =
+        "foundry.applications.sidebar.tabs.ChatLog.prototype.processMessage";
+      scrollBottomTarget =
         "foundry.applications.sidebar.tabs.ChatLog.prototype.scrollBottom";
     }
     libWrapper.register(
       "multiple-chat-tabs",
-      target,
+      processMessageTarget,
+      function (wrapped, ...args) {
+        let appElement;
+        // core version check
+        if (
+          typeof game.release?.generation === "number" &&
+          game.release.generation >= 13
+        ) {
+          const activeElement = document.activeElement;
+          if (activeElement) {
+            appElement =
+              activeElement.closest("#chat-popout") ||
+              activeElement.closest("#chat");
+          }
+        } else {
+          if (this.popOut) {
+            appElement = $(this.element).find("section#chat-popout")[0];
+          } else {
+            appElement = this.element[0] || this.element;
+          }
+        }
+        if (appElement && appElement.dataset.activeFilter) {
+          MultipleChatTabs.activeSubmitFilter = appElement.dataset.activeFilter;
+        } else {
+          const allTabs = MultipleChatTabs.getTabs();
+          MultipleChatTabs.activeSubmitFilter = allTabs[0]?.id || null;
+        }
+        return wrapped(...args);
+      },
+      "WRAPPER"
+    );
+    libWrapper.register(
+      "multiple-chat-tabs",
+      scrollBottomTarget,
       function (wrapped, ...args) {
         wrapped(...args);
         setTimeout(() => {

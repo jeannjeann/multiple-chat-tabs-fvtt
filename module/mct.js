@@ -42,17 +42,30 @@ Hooks.once("init", async function () {
   if (api.isV11() || api.isV12()) {
     Hooks.on("renderChatMessage", (message, html, data) => {
       const htmlElement = html[0] || html;
-      MultipleChatTabs.applyFilterToMessage(
-        htmlElement,
-        MultipleChatTabs.activeFilter
-      );
+      setTimeout(() => {
+        const appElement = htmlElement.closest("#chat, #chat-popout");
+        if (appElement) {
+          const windowActiveFilter = appElement.dataset.activeFilter;
+          if (windowActiveFilter) {
+            MultipleChatTabs.applyFilterToMessage(
+              htmlElement,
+              windowActiveFilter
+            );
+          }
+        }
+      }, 0);
     });
   } else {
     Hooks.on("renderChatMessageHTML", (message, html, data) => {
-      MultipleChatTabs.applyFilterToMessage(
-        html,
-        MultipleChatTabs.activeFilter
-      );
+      setTimeout(() => {
+        const appElement = html.closest("#chat, #chat-popout");
+        if (appElement) {
+          const windowActiveFilter = appElement.dataset.activeFilter;
+          if (windowActiveFilter) {
+            MultipleChatTabs.applyFilterToMessage(html, windowActiveFilter);
+          }
+        }
+      }, 0);
     });
   }
 
@@ -220,8 +233,15 @@ Hooks.once("ready", function () {
 Hooks.on("renderChatLog", async (app, html, data) => {
   const MODULE_ID = "multiple-chat-tabs";
   const api = game.modules.get(MODULE_ID).api;
-  const htmlElement = html?.jquery ? html[0] : html;
+  let htmlElement = html?.jquery ? html[0] : html;
   if (!htmlElement) return;
+
+  if (htmlElement.id === "chat-popout" && htmlElement.tagName === "DIV") {
+    const innerContainer = htmlElement.querySelector("section#chat-popout");
+    if (innerContainer) {
+      htmlElement = innerContainer;
+    }
+  }
 
   if (app.id.startsWith("chat-popout")) {
     MultipleChatTabs.popoutChatApps[htmlElement.id] = app;
@@ -527,7 +547,7 @@ Hooks.on("deleteChatMessage", (message, options, userId) => {
 Hooks.on("preCreateChatMessage", (message, data, options, userId) => {
   const api = game.modules.get("multiple-chat-tabs").api;
   const allTabs = MultipleChatTabs.getTabs();
-  const activeTabId = MultipleChatTabs.activeFilter || allTabs[0]?.id;
+  const activeTabId = MultipleChatTabs.activeSubmitFilter || allTabs[0]?.id;
 
   const updateData = { "flags.multiple-chat-tabs.sourceTab": activeTabId };
 
@@ -608,6 +628,7 @@ Hooks.on("closeChatPopout", (app) => {
     app.element[0] &&
     MultipleChatTabs.popoutChatApps[app.element[0].id]
   ) {
+    delete MultipleChatTabs.windowStates[app.element[0].id];
     delete MultipleChatTabs.popoutChatApps[app.element[0].id];
   }
 });
@@ -624,6 +645,7 @@ Hooks.on("closeApplication", (app) => {
     app.element &&
     MultipleChatTabs.popoutChatApps[app.element.id]
   ) {
+    delete MultipleChatTabs.windowStates[app.element.id];
     delete MultipleChatTabs.popoutChatApps[app.element.id];
   }
 });
