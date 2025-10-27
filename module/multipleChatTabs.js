@@ -45,6 +45,8 @@ export class MultipleChatTabs {
   static oldestMessage = {};
   static oldestLoadMessage = {}; // { [windowId]: { [tabId]: messageId } }
 
+  static activeSubmitFilter = null;
+
   /**
    * Refresh tab UI
    * @param {HTMLElement} html

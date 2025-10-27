@@ -243,29 +243,6 @@ Hooks.on("renderChatLog", async (app, html, data) => {
     }
   }
 
-  // DEBUG--- イベントリスナー検証用コード ---
-  const chatForm = htmlElement.querySelector("#chat-form");
-  if (chatForm) {
-    chatForm.addEventListener(
-      "submit",
-      (event) => {
-        const form = event.currentTarget;
-        const appElement = form.closest("#chat, #chat-popout");
-        if (appElement) {
-          console.log(
-            `[MCT EVENT_LISTENER] Submit event fired in window: "${appElement.id}", Active Filter: "${appElement.dataset.activeFilter}"`
-          );
-        } else {
-          console.error(
-            "[MCT EVENT_LISTENER] Could not find parent app element from the form."
-          );
-        }
-      },
-      { capture: true }
-    ); // captureフェーズでイベントを捕捉
-  }
-  //
-
   if (app.id.startsWith("chat-popout")) {
     MultipleChatTabs.popoutChatApps[htmlElement.id] = app;
   }
@@ -570,7 +547,7 @@ Hooks.on("deleteChatMessage", (message, options, userId) => {
 Hooks.on("preCreateChatMessage", (message, data, options, userId) => {
   const api = game.modules.get("multiple-chat-tabs").api;
   const allTabs = MultipleChatTabs.getTabs();
-  const activeTabId = MultipleChatTabs.activeFilter || allTabs[0]?.id;
+  const activeTabId = MultipleChatTabs.activeSubmitFilter || allTabs[0]?.id;
 
   const updateData = { "flags.multiple-chat-tabs.sourceTab": activeTabId };
 

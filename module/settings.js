@@ -152,6 +152,26 @@ export function registerSettings() {
     }
     libWrapper.register(
       "multiple-chat-tabs",
+      "ChatLog.prototype.processMessage",
+      function (wrapped, ...args) {
+        let appElement;
+        if (this.popOut) {
+          appElement = $(this.element).find("section#chat-popout")[0];
+        } else {
+          appElement = this.element[0] || this.element;
+        }
+        if (appElement && appElement.dataset.activeFilter) {
+          MultipleChatTabs.activeSubmitFilter = appElement.dataset.activeFilter;
+        } else {
+          const allTabs = MultipleChatTabs.getTabs();
+          MultipleChatTabs.activeSubmitFilter = allTabs[0]?.id || null;
+        }
+        return wrapped(...args);
+      },
+      "WRAPPER"
+    );
+    libWrapper.register(
+      "multiple-chat-tabs",
       target,
       function (wrapped, ...args) {
         wrapped(...args);
